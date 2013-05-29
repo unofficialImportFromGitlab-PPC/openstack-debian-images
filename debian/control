@@ -1,0 +1,30 @@
+Source: openstack-debian-images
+Section: web
+Priority: extra
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Loic Dachary (OuoU) <loic@debian.org>,
+           Julien Danjou <acid@debian.org>,
+           Thomas Goirand <zigo@debian.org>,
+           Ghe Rivero <ghe.rivero@stackops.com>,
+           Mehdi Abaakouk <sileht@sileht.net>,
+           Liang Guo <guoliang@debian.org>
+Build-Depends: debhelper (>= 9), openstack-pkg-tools
+Standards-Version: 3.9.4
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/openstack-debian-images.git;a=summary
+Vcs-Git: git://anonscm.debian.org/openstack/openstack-debian-images.git
+
+Package: openstack-debian-images
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: debootstrap,
+         extlinux,
+         initramfs-tools,
+         kpartx,
+         mbr,
+         parted,
+         qemu-utils,
+         ${misc:Depends}
+Description: script to build a Debian image for OpenStack
+ This package contains a script which is helpful for creating iamges to be used
+ with the OpenStack IaaS cloud software suite. It uses only tools available
+ within Debian.
