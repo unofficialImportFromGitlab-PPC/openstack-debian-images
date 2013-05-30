@@ -3,6 +3,8 @@ openstack-debian-images (0.2) unstable; urgency=low
   * Added "blacklist pcspkr" in /etc/modprobe.d/blacklist.conf.
   * rm /lib/udev/write_net_rules (note: it should be diverted rather than just
     rm, this is temporary until I have time to fix this).
+  * Added loading of acpiphp and pci_hotplug kernel modules (required for
+    mounting Cinder volumes).
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 30 May 2013 01:21:45 +0800
 
