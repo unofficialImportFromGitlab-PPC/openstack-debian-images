@@ -1,3 +1,11 @@
+openstack-debian-images (0.2) unstable; urgency=low
+
+  * Added "blacklist pcspkr" in /etc/modprobe.d/blacklist.conf.
+  * rm /lib/udev/write_net_rules (note: it should be diverted rather than just
+    rm, this is temporary until I have time to fix this).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 May 2013 01:21:45 +0800
+
 openstack-debian-images (0.1) unstable; urgency=low
 
   * Initial release. (Closes: #710273).

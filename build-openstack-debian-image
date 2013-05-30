@@ -87,6 +87,9 @@ proc	/proc	proc	nodev,noexec,nosuid	0	0
 " > ${MOUNT_DIR}/etc/fstab
 chroot ${MOUNT_DIR} mount /proc || true
 
+echo "# disable pc speaker
+blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
+
 # Enable bash-completion by default
 if [ ${EXTRA} = "yes" ] ; then
 	echo "# enable bash completion in interactive shells
@@ -106,6 +109,7 @@ fi
 
 rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
+rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 
 # Setup networking (eg: DHCP by default)
 echo "# This file describes the network interfaces available on your system
