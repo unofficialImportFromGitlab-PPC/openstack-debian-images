@@ -146,8 +146,8 @@ echo "deb http://http.debian.net/debian wheezy main
 deb-src http://http.debian.net/debian wheezy main
 deb http://http.debian.net/debian wheezy-updates main
 deb-src http://http.debian.net/debian wheezy-updates main
-deb http://security.debian.org/ squeeze/updates main
-deb-src http://security.debian.org/ squeeze/updates main
+deb http://security.debian.org/ wheezy/updates main
+deb-src http://security.debian.org/ wheezy/updates main
 " >${MOUNT_DIR}/etc/apt/sources.list
 chroot ${MOUNT_DIR} apt-get update
 
