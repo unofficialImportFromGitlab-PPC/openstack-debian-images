@@ -10,7 +10,7 @@ else
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests
-EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim
+EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
 
 if [ ${EXTRA} = "no" ] ; then
 	PKG_LIST=${NEEDED_PACKAGES}
