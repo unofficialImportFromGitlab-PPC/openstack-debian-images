@@ -3,8 +3,8 @@
 build\-openstack\-debian\-image \- build a Debian image to be used with OpenStack
 .SH SYNOPSIS
 .B build\-openstack\-debian\-image
+.B \-\-release|\-r <jessie|wheezy>
 [ OPTIONS ]
-.B [ \-\-minimal ]
 
 .SH DESCRIPTION
 .LP
@@ -22,11 +22,36 @@ a password (eg: adduser \-\-disabled\-password).  You can "sudo" to root from
 that user without a password. The root password is "password" by default, and
 ssh into the root user with using ssh keys is disabled by default.
 
-.SH "OPTION"
+.SH "PARAMETERS"
+
+.LP
+.B \-\-release|\-r
+.I wheezy|jessie
+.IP
+
+Sets the
+.I release
+name to be installed. Currently only 2 values a possible:
+.I wheezy
+and
+.I jessie.
+
+.SH "OPTIONS"
+
+.LP
+.B \-\-debootstrap\-url|\-u
+.I http://<debian\-mirror>/debian
+.IP
+
+Select the
+.I URL
+of the Debian mirror to use to perform the debootstrap. For example:
+.I http://ftp.fr.debian.org/debian
 
 .LP
 .B \-\-minimal
 .IP
+
 Without this option, the following packages will also be installed:
 bash\-completion (and /etc/bash.bashrc will be setup to use bash\-completion),
 joe (the text editor), most, GNU screen, less and vim. If you believe that

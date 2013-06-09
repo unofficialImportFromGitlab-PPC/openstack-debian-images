@@ -4,7 +4,7 @@ set -e
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m]"
+	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>]"
 	exit 1
 }
 
