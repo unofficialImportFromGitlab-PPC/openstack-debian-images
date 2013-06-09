@@ -38,16 +38,24 @@ ${PARTED} -s ${AMI_NAME} mktable msdos
 ${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1M 100%
 ${PARTED} -s ${AMI_NAME} set 1 boot on
 install-mbr ${AMI_NAME}
-kpartx -av ${AMI_NAME}
+RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
+
+if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+	LOOP_DEVICE=`echo ${RESULT_KPARTX} | cut -d" " -f3`
+	echo "kpartx mounted using: ${LOOP_DEVICE}"
+else
+	echo "It seems kpartx didn't mount the image correctly: exiting."
+	exit 1
+fi
 
 # We first use ext2, THEN convert to ext3, because that's so much faster this way.
-mkfs.ext2 /dev/mapper/loop0p1
+mkfs.ext2 /dev/mapper/${LOOP_DEVICE}
 
 # No fsck because of X days without checks
-tune2fs -i 0 /dev/mapper/loop0p1
+tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
 
 MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
-mount -o loop /dev/mapper/loop0p1 ${MOUNT_DIR}
+mount -o loop /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
 debootstrap --verbose \
 	--include=${PKG_LIST} \
 	wheezy ${MOUNT_DIR} ${DEB_MIRROR}
@@ -173,7 +181,7 @@ rm ${MOUNT_DIR}/var/cache/apt/archives/*.deb
 ###########################
 KERNEL=`chroot ${MOUNT_DIR} find boot -name 'vmlinuz-*'`
 RAMDISK=`chroot ${MOUNT_DIR} find boot -name 'initrd.img-*'`
-UUID=`blkid -o value -s UUID /dev/mapper/loop0p1`
+UUID=`blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE}`
 echo "default linux
 timeout 1
 label linux
@@ -190,9 +198,9 @@ extlinux --install ${MOUNT_DIR}
 chroot ${MOUNT_DIR} umount /proc || true
 umount ${MOUNT_DIR}
 # Run FSCK so that resize can work
-tune2fs -j /dev/mapper/loop0p1
-fsck.ext3 -f /dev/mapper/loop0p1 || true
-#losetup -d /dev/mapper/loop0p1
+tune2fs -j /dev/mapper/${LOOP_DEVICE}
+fsck.ext3 -f /dev/mapper/${LOOP_DEVICE} || true
+#losetup -d /dev/mapper/${LOOP_DEVICE}
 kpartx -d ${AMI_NAME}
 rmdir ${MOUNT_DIR}
 qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
