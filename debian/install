@@ -1,1 +1,1 @@
-build-openstack-debian-image	/usr/bin
+build-openstack-debian-image	/usr/sbin
