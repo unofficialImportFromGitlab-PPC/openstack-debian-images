@@ -1,31 +1,81 @@
 #!/bin/sh
 
 set -e
-set -x
 
-if [ "${1}" = "--minimal" ] ; then
-	EXTRA=no
-else
-	EXTRA=yes
+# Parse input parameters
+usage() {
+	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m]"
+	exit 1
+}
+
+EXTRA=yes
+for i in $@ ; do
+	case "${1}" in
+	"--extra-packages"|"-e")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the extra packages"
+			usage
+		fi
+		EXTRA_PACKAGES=${2}
+		shift
+		shift
+	;;
+	"--debootstrap-url"|"-u")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the debootstrap URL"
+			usage
+		fi
+		DEB_MIRROR=${2}
+		shift
+		shift
+	;;
+	"--minimal"|"-m")
+		EXTRA=no
+		shift
+	;;
+	"--release"|"-r")
+		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] ; then
+			RELEASE=${2}
+			shift
+			shift
+		else
+			echo "Release not recognized."
+			usage
+		fi
+	;;
+	*)
+	;;
+	esac
+done
+
+if [ -z "${RELEASE}" ] ; then
+	echo "Release not recognized: please specify the -r parameter."
+	usage
+fi
+if [ -z "${DEB_MIRROR}" ] ; then
+	DEB_MIRROR=http://ftp.uk.debian.org/debian
+fi
+if [ -z "${EXTRA_PACKAGES}" ] ; then
+	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests
-EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
 
 if [ ${EXTRA} = "no" ] ; then
 	PKG_LIST=${NEEDED_PACKAGES}
 else
 	PKG_LIST=${NEEDED_PACKAGES},${EXTRA_PACKAGES}
 fi
-
-#DEB_MIRROR=http://ftp.fr.debian.org/debian
-DEB_MIRROR=http://ftp.uk.debian.org/debian
-
-FLAVOR=wheezy
-FILE_NAME=debian-${FLAVOR}-7.0.0-2-amd64
+if ! [ `whoami` = "root" ] ; then
+	echo "You have to be root to run this script"
+	exit 1
+fi
+FILE_NAME=debian-${RELEASE}-7.0.0-2-amd64
 AMI_NAME=${FILE_NAME}.raw
 QCOW2_NAME=${FILE_NAME}.qcow2
 rm -f ${AMI_NAME}
+
+set -x
 
 ######################################
 ### Prepare the HDD (format, ext.) ###
@@ -58,7 +108,7 @@ MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
 mount -o loop /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
 debootstrap --verbose \
 	--include=${PKG_LIST} \
-	wheezy ${MOUNT_DIR} ${DEB_MIRROR}
+	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
 
 ############################
 ### Customize the distro ###
@@ -150,13 +200,16 @@ iface eth2 inet dhcp
 echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
 
 # This should be a correct default everywhere
-echo "deb http://http.debian.net/debian wheezy main
-deb-src http://http.debian.net/debian wheezy main
-deb http://http.debian.net/debian wheezy-updates main
+echo "deb http://http.debian.net/debian ${RELEASE} main
+deb-src http://http.debian.net/debian ${RELEASE} main"
+
+if [ "${RELEASE}" = "wheezy" ] ; then
+	echo "deb http://http.debian.net/debian wheezy-updates main
 deb-src http://http.debian.net/debian wheezy-updates main
 deb http://security.debian.org/ wheezy/updates main
 deb-src http://security.debian.org/ wheezy/updates main
-" >${MOUNT_DIR}/etc/apt/sources.list
+" >>${MOUNT_DIR}/etc/apt/sources.list
+fi
 chroot ${MOUNT_DIR} apt-get update
 
 # Setup some cloud stuff
