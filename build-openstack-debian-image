@@ -60,6 +60,9 @@ if [ -z "${EXTRA_PACKAGES}" ] ; then
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests
+if [ "${RELEASE}" = "jessie" ] ; then
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot
+fi
 
 if [ ${EXTRA} = "no" ] ; then
 	PKG_LIST=${NEEDED_PACKAGES}
@@ -213,12 +216,27 @@ fi
 chroot ${MOUNT_DIR} apt-get update
 
 # Setup some cloud stuff
-PKGS="cloud-init cloud-utils cloud-initramfs-growroot"
-for i in $PKGS ; do
-	cp ${i}_*.deb ${MOUNT_DIR}
-	chroot ${MOUNT_DIR} dpkg -i ${i}_*.deb
-	rm ${MOUNT_DIR}/${i}_*.deb
-done
+# Since none of cloud-init, cloud-utils and cloud-initramfs-growroot
+# are in Wheezy, we expect that the backported .deb is in the current
+# path. We first check for that fact.
+if [ "${RELEASE}" = "wheezy" ] ; then
+	CHECK=`ls cloud-init_*.deb cloud-utils_*.deb cloud-initramfs-growroot_*.deb | wc -l`
+	if [ "${CHECK}" = 3 ] ; then
+		PKGS="cloud-init cloud-utils cloud-initramfs-growroot"
+		for i in $PKGS ; do
+			cp ${i}_*.deb ${MOUNT_DIR}
+			chroot ${MOUNT_DIR} dpkg -i ${i}_*.deb
+			rm ${MOUNT_DIR}/${i}_*.deb
+		done
+	else
+		echo "You've selected Wheezy, though there's some missing .deb files."
+		echo "Please drop cloud-init cloud-utils cloud-initramfs-growroot"
+		echo ".deb backports in your current directory."
+		umount ${MOUNT_DIR}
+		kpartx -d ${AMI_NAME}
+		exit 1
+	fi
+fi
 
 # For OpenStack, we would like to use Ec2 and no other API
 echo "# to update this file, run dpkg-reconfigure cloud-init
