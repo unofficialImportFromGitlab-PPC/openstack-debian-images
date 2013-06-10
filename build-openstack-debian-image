@@ -236,6 +236,7 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 		echo "You've selected Wheezy, though there's some missing .deb files."
 		echo "Please drop cloud-init cloud-utils cloud-initramfs-growroot"
 		echo ".deb backports in your current directory."
+		umount ${MOUNT_DIR}/proc || true
 		umount ${MOUNT_DIR}
 		kpartx -d ${AMI_NAME}
 		exit 1
