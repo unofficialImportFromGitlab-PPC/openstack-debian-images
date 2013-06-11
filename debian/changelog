@@ -1,3 +1,11 @@
+openstack-debian-images (0.2) UNRELEASED; urgency=low
+
+  * Also unmount the /proc of the image folder in /tmp in case we abort due to
+    the .deb files missing if building a Wheezy image.
+  * Review the script man page.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 11 Jun 2013 16:47:18 +0800
+
 openstack-debian-images (0.1) unstable; urgency=low
 
   * Initial release. (Closes: #710273).
