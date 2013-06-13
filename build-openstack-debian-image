@@ -59,7 +59,7 @@ if [ -z "${EXTRA_PACKAGES}" ] ; then
 	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
 fi
 
-NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file
+NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd
 if [ "${RELEASE}" = "jessie" ] ; then
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot
 else
@@ -77,7 +77,7 @@ if ! [ `whoami` = "root" ] ; then
 	echo "You have to be root to run this script"
 	exit 1
 fi
-FILE_NAME=debian-${RELEASE}-7.0.0-2-amd64
+FILE_NAME=debian-${RELEASE}-7.0.0-3-amd64
 AMI_NAME=${FILE_NAME}.raw
 QCOW2_NAME=${FILE_NAME}.qcow2
 rm -f ${AMI_NAME}
@@ -176,6 +176,13 @@ fi" >>${MOUNT_DIR}/etc/bash.bashrc
 
 	chroot ${MOUNT_DIR} apt-get install -y locales-all
 fi
+
+# Turn off console blanking which is *very* annoying
+# and increase KEYBOARD_DELAY because it can be annoying
+# over network.
+sed -i s/^BLANK_TIME=.*/BLANK_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
+sed -i s/^POWERDOWN_TIME=.*/POWERDOWN_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
+sed -i 's/^[ \t#]KEYBOARD_DELAY=.*/KEYBOARD_DELAY=1000/' ${MOUNT_DIR}/etc/kbd/config
 
 rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
