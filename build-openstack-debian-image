@@ -215,7 +215,7 @@ echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
 
 # This should be a correct default everywhere
 echo "deb http://http.debian.net/debian ${RELEASE} main
-deb-src http://http.debian.net/debian ${RELEASE} main"
+deb-src http://http.debian.net/debian ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
 
 if [ "${RELEASE}" = "wheezy" ] ; then
 	echo "deb http://http.debian.net/debian wheezy-updates main
