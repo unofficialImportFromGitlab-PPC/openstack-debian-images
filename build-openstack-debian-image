@@ -123,7 +123,7 @@ debootstrap --verbose \
 ### Customize: access to the VM ###
 # # # # # # # # # # # # # # # # # #
 # Setup default root password to: password
-chroot ${MOUNT_DIR} sh -c "echo root:password | chpasswd"
+#chroot ${MOUNT_DIR} sh -c "echo root:password | chpasswd"
 
 # Otherwise, we have a huge backdoor, since the root password
 # is always the same.
