@@ -63,6 +63,21 @@ joe (the text editor), most, GNU screen, less and vim. If you believe that
 more things should be added in the non\-minimal image, suggestions are
 welcome.
 
+.LP
+.B \-\-hook\-script
+.I hook-script
+.IP
+
+If you wish to further customize the generated cloud image, you can use a
+hook script. When called, build-openstack-debian-image will fill up some
+BODI_* environment variable for the hook script to use as per below:
+
+.B BODI_CHROOT_PATH
+path where the image is mounted
+
+.B BODI_RELEASE
+name of the Debian release that is being bootstraped
+
 .SH AUTHORS
 
 build\-openstack\-debian\-image has been written by Thomas Goirand

@@ -1,3 +1,9 @@
+openstack-debian-images (0.3) UNRELEASED; urgency=low
+
+  * Added a hook script.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 02 Jul 2013 17:56:22 +0800
+
 openstack-debian-images (0.2) unstable; urgency=low
 
   * Also unmount the /proc of the image folder in /tmp in case we abort due to

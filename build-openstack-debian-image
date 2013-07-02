@@ -4,7 +4,7 @@ set -e
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>]"
+	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>] [--hook-script|-hs <hook-script>]"
 	exit 1
 }
 
@@ -31,6 +31,18 @@ for i in $@ ; do
 	;;
 	"--minimal"|"-m")
 		EXTRA=no
+		shift
+	;;
+	"--hook-script"|"-hs")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the hook script"
+			usage
+		fi
+		if ! [ -x "${2}" ] ; then
+			echo "Hook script not executable"
+		fi
+		HOOK_SCRIPT=${2}
+		shift
 		shift
 	;;
 	"--release"|"-r")
@@ -274,6 +286,15 @@ append initrd=${RAMDISK} root=/dev/vda1 ro quiet" > ${MOUNT_DIR}/boot/extlinux/e
 cp ${MOUNT_DIR}/boot/extlinux/extlinux.conf ${MOUNT_DIR}/extlinux.conf
 extlinux --install ${MOUNT_DIR}
 #chroot ${MOUNT_DIR} extlinux-update
+
+###################
+### HOOK SCRIPT ###
+###################
+if [ -x ${HOOK_SCRIPT} ] ; then
+	export BODI_CHROOT_PATH=${MOUNT_DIR}
+	export BODI_RELEASE=${RELEASE}
+	${HOOK_SCRIPT}
+fi
 
 ##########################
 ### Unmount everything ###
