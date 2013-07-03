@@ -4,7 +4,7 @@ set -e
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>] [--hook-script|-hs <hook-script>]"
+	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>] [--extra-packages|-e <package>,<package>,...] [--hook-script|-hs <hook-script>]"
 	exit 1
 }
 
@@ -100,13 +100,12 @@ set -x
 ### Prepare the HDD (format, ext.) ###
 ######################################
 PARTED=/sbin/parted
-qemu-img create ${AMI_NAME} 1G
+rm -f $AMI_NAME
+qemu-img create ${AMI_NAME} 10G
 #dd if=/dev/null bs=1M seek=1024 of=${AMI_NAME}
 
 ${PARTED} -s ${AMI_NAME} mktable msdos
 ${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1M 100%
-${PARTED} -s ${AMI_NAME} set 1 boot on
-install-mbr ${AMI_NAME}
 RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
@@ -116,6 +115,18 @@ else
 	echo "It seems kpartx didn't mount the image correctly: exiting."
 	exit 1
 fi
+
+cleanup(){
+	[ ! -d "${MOUNT_DIR}" ] && return
+	echo
+	echo "error, umounting $MOUNT_DIR"
+	chroot ${MOUNT_DIR} umount /proc || true
+	chroot ${MOUNT_DIR} umount /sys || true
+	umount ${MOUNT_DIR}
+	rmdir ${MOUNT_DIR}
+	kpartx -d ${AMI_NAME}
+}
+trap "cleanup" EXIT TERM INT
 
 # We first use ext2, THEN convert to ext3, because that's so much faster this way.
 mkfs.ext2 /dev/mapper/${LOOP_DEVICE}
@@ -255,9 +266,6 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 		echo "You've selected Wheezy, though there's some missing .deb files."
 		echo "Please drop cloud-init cloud-utils cloud-initramfs-growroot"
 		echo ".deb backports in your current directory."
-		umount ${MOUNT_DIR}/proc || true
-		umount ${MOUNT_DIR}
-		kpartx -d ${AMI_NAME}
 		exit 1
 	fi
 fi
@@ -299,12 +307,36 @@ fi
 ##########################
 ### Unmount everything ###
 ##########################
+
+cleanup(){
+	# refine cleanup everything was ok
+	echo "Finished."
+} 
+
 chroot ${MOUNT_DIR} umount /proc || true
 umount ${MOUNT_DIR}
 # Run FSCK so that resize can work
 tune2fs -j /dev/mapper/${LOOP_DEVICE}
 fsck.ext3 -f /dev/mapper/${LOOP_DEVICE} || true
-#losetup -d /dev/mapper/${LOOP_DEVICE}
+resize2fs -M /dev/mapper/${LOOP_DEVICE}
+
+FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
+WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + 200` # Add 200M
+resize2fs /dev/mapper/${LOOP_DEVICE} ${WANTED_SIZE}M
+
+FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
+FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024` # some blocks for mbr and multiple block size (4k)
+
 kpartx -d ${AMI_NAME}
 rmdir ${MOUNT_DIR}
+
+# Rebuild a smaller partition table
+parted -s ${AMI_NAME} rm 1
+parted -s ${AMI_NAME} mkpart primary ext3 1M ${FINAL_IMG_SIZE}M
+parted -s ${AMI_NAME} set 1 boot on
+install-mbr ${AMI_NAME}
+
+# Add 2M for the 1M at the beginning of the partition and some additionnal space 
+truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
 qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
+

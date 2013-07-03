@@ -1,6 +1,12 @@
 openstack-debian-images (0.3) UNRELEASED; urgency=low
 
+  [ Thomas Goirand ]
   * Added a hook script.
+
+  [ Mehdi Abaakouk ]
+  * Allow to create image larger than 1G
+  * Shrink image to a minimal size
+  * Umount chroot and delete devmapper stuff on error/interruption
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 02 Jul 2013 17:56:22 +0800
 
