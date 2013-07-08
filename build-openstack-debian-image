@@ -4,7 +4,13 @@ set -e
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy> [--minimal|-m] [--debootstrap-url|-u <debootstrap-mirror>] [--extra-packages|-e <package>,<package>,...] [--hook-script|-hs <hook-script>]"
+	echo "Usage: $0 --release|-r <jessie|wheezy> [options]
+Options are:
+ --minimal|-m
+ --debootstrap-url|-u <debootstrap-mirror>
+ --source-list-mirror|-s <source-list-mirror>
+ --extra-packages|-e <package>,<package>,...
+ --hook-script|-hs <hook-script>"
 	exit 1
 }
 
@@ -45,6 +51,15 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--source-list-mirror"|"-s")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the hook script"
+			usage
+		fi
+		SOURCE_LIST_MIRROR=${2}
+		shift
+		shift
+	;;
 	"--release"|"-r")
 		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] ; then
 			RELEASE=${2}
@@ -69,6 +84,10 @@ if [ -z "${DEB_MIRROR}" ] ; then
 fi
 if [ -z "${EXTRA_PACKAGES}" ] ; then
 	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
+fi
+
+if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
+	SOURCE_LIST_MIRROR=http://http.debian.net/debian
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd
@@ -237,17 +256,17 @@ iface eth2 inet dhcp
 echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
 
 # This should be a correct default everywhere
-echo "deb http://http.debian.net/debian ${RELEASE} main
-deb-src http://http.debian.net/debian ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
+echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main
+deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
 
 if [ "${RELEASE}" = "wheezy" ] ; then
-	echo "deb http://http.debian.net/debian wheezy-updates main
-deb-src http://http.debian.net/debian wheezy-updates main
+	echo "deb ${SOURCE_LIST_MIRROR} wheezy-updates main
+deb-src ${SOURCE_LIST_MIRROR} wheezy-updates main
 deb http://security.debian.org/ wheezy/updates main
 deb-src http://security.debian.org/ wheezy/updates main
 
-deb http://http.debian.net/debian wheezy-backports main
-deb-src http://http.debian.net/debian wheezy-backports main
+deb ${SOURCE_LIST_MIRROR} wheezy-backports main
+deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 chroot ${MOUNT_DIR} apt-get update

@@ -4,6 +4,8 @@ openstack-debian-images (0.3) UNRELEASED; urgency=low
   * Added a hook script.
   * Installs cloud-init, cloud-utils and cloud-initramfs-growroot from
     backports in Wheezy, since they are now available from there.
+  * Added a --source-list-mirror option to fill the sources.list with custom
+    mirror addresses.
 
   [ Mehdi Abaakouk ]
   * Allow to create image larger than 1G

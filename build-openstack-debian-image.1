@@ -55,12 +55,22 @@ you want to add to the image
 
 .LP
 .B \-\-debootstrap\-url|\-u
-.I http://<debian\-mirror>/debian
+.I <debootstrap\-debian\-mirror>
 .IP
 
 Select the
 .I URL
 of the Debian mirror to use to perform the debootstrap. For example:
+.I http://ftp.fr.debian.org/debian
+
+.LP
+.B \-\-source\-list\-mirror|\-s
+.I <source\-list\-mirror>
+.IP
+
+URL to use when building the sources.list inside the chroot. If this
+option is ommited, then the global http.debian.net redirector is used.
+For example, you can use:
 .I http://ftp.fr.debian.org/debian
 
 .LP
@@ -98,4 +108,5 @@ name of the Debian release that is being bootstraped
 .SH AUTHORS
 
 build\-openstack\-debian\-image has been written by Thomas Goirand
-<zigo@debian.org>.
+<zigo@debian.org>, with contributions from Mehdi Abaakouk
+<sileht@sileht.net>.
