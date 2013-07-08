@@ -94,8 +94,9 @@ NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,e
 if [ "${RELEASE}" = "jessie" ] ; then
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot
 else
-	# These are needed by cloud-init and friends, and since we don't debootstrap them
-	# when creating a Wheezy image, we resolve dependencies by hand
+	# These are needed by cloud-init and friends, and since we don't want backports of them,
+	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
+	# apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests
 fi
 
