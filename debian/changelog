@@ -2,6 +2,8 @@ openstack-debian-images (0.3) UNRELEASED; urgency=low
 
   [ Thomas Goirand ]
   * Added a hook script.
+  * Installs cloud-init, cloud-utils and cloud-initramfs-growroot from
+    backports in Wheezy, since they are now available from there.
 
   [ Mehdi Abaakouk ]
   * Allow to create image larger than 1G

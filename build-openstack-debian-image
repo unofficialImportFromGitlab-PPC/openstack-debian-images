@@ -245,29 +245,17 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 deb-src http://http.debian.net/debian wheezy-updates main
 deb http://security.debian.org/ wheezy/updates main
 deb-src http://security.debian.org/ wheezy/updates main
+
+deb http://http.debian.net/debian wheezy-backports main
+deb-src http://http.debian.net/debian wheezy-backports main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 chroot ${MOUNT_DIR} apt-get update
 
-# Setup some cloud stuff
-# Since none of cloud-init, cloud-utils and cloud-initramfs-growroot
-# are in Wheezy, we expect that the backported .deb is in the current
-# path. We first check for that fact.
+# Setup cloud-init, cloud-utils and cloud-initramfs-growroot
+# These are only available from backports in Wheezy
 if [ "${RELEASE}" = "wheezy" ] ; then
-	CHECK=`ls cloud-init_*.deb cloud-utils_*.deb cloud-initramfs-growroot_*.deb | wc -l`
-	if [ "${CHECK}" = 3 ] ; then
-		PKGS="cloud-init cloud-utils cloud-initramfs-growroot"
-		for i in $PKGS ; do
-			cp ${i}_*.deb ${MOUNT_DIR}
-			chroot ${MOUNT_DIR} dpkg -i ${i}_*.deb
-			rm ${MOUNT_DIR}/${i}_*.deb
-		done
-	else
-		echo "You've selected Wheezy, though there's some missing .deb files."
-		echo "Please drop cloud-init cloud-utils cloud-initramfs-growroot"
-		echo ".deb backports in your current directory."
-		exit 1
-	fi
+	chroot ${MOUNT_DIR} -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
 fi
 
 # For OpenStack, we would like to use Ec2 and no other API
