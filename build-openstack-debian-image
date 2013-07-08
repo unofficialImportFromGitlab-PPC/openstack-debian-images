@@ -8,7 +8,7 @@ usage() {
 Options are:
  --minimal|-m
  --debootstrap-url|-u <debootstrap-mirror>
- --source-list-mirror|-s <source-list-mirror>
+ --sources.list-mirror|-s <source-list-mirror>
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>"
 	exit 1
@@ -51,7 +51,7 @@ for i in $@ ; do
 		shift
 		shift
 	;;
-	"--source-list-mirror"|"-s")
+	"--sources.list-mirror"|"-s")
 		if [ -z "${2}" ] ; then
 			echo "No parameter defining the hook script"
 			usage
