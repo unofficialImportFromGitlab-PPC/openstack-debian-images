@@ -275,7 +275,7 @@ chroot ${MOUNT_DIR} apt-get update
 # Setup cloud-init, cloud-utils and cloud-initramfs-growroot
 # These are only available from backports in Wheezy
 if [ "${RELEASE}" = "wheezy" ] ; then
-	chroot ${MOUNT_DIR} -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
+	chroot ${MOUNT_DIR} apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
 fi
 
 # For OpenStack, we would like to use Ec2 and no other API
