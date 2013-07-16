@@ -10,7 +10,8 @@ Options are:
  --debootstrap-url|-u <debootstrap-mirror>
  --sources.list-mirror|-s <source-list-mirror>
  --extra-packages|-e <package>,<package>,...
- --hook-script|-hs <hook-script>"
+ --hook-script|-hs <hook-script>
+ --image-size|-is <image-size>"
 	exit 1
 }
 
@@ -37,6 +38,24 @@ for i in $@ ; do
 	;;
 	"--minimal"|"-m")
 		EXTRA=no
+		shift
+	;;
+	# Take care, this option makes it impossible to write files inside
+	# your raw image (input/output error) for a currently unknown reason.
+	# Use with care, if you know what you are doing, and until there is
+	# a fix for this.
+	# Therefore, this option is currently not documented.
+	"--automatic-resize"|"-ar")
+		AUTOMATIC_RESIZE=yes
+		shift
+	;;
+	"--image-size"|"-is")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the image size"
+			usage
+		fi
+		IMAGE_SIZE=${2}
+		shift
 		shift
 	;;
 	"--hook-script"|"-hs")
@@ -89,6 +108,9 @@ fi
 if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
 	SOURCE_LIST_MIRROR=http://http.debian.net/debian
 fi
+if [ -z "${IMAGE_SIZE}" ] ; then
+	IMAGE_SIZE=1
+fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd
 if [ "${RELEASE}" = "jessie" ] ; then
@@ -121,7 +143,7 @@ set -x
 ######################################
 PARTED=/sbin/parted
 rm -f $AMI_NAME
-qemu-img create ${AMI_NAME} 10G
+qemu-img create ${AMI_NAME} ${IMAGE_SIZE}G
 #dd if=/dev/null bs=1M seek=1024 of=${AMI_NAME}
 
 ${PARTED} -s ${AMI_NAME} mktable msdos
@@ -326,25 +348,29 @@ umount ${MOUNT_DIR}
 # Run FSCK so that resize can work
 tune2fs -j /dev/mapper/${LOOP_DEVICE}
 fsck.ext3 -f /dev/mapper/${LOOP_DEVICE} || true
-resize2fs -M /dev/mapper/${LOOP_DEVICE}
 
-FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
-WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + 200` # Add 200M
-resize2fs /dev/mapper/${LOOP_DEVICE} ${WANTED_SIZE}M
+if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
+	resize2fs -M /dev/mapper/${LOOP_DEVICE}
+	FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
+	WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + 200` # Add 200M
+	resize2fs /dev/mapper/${LOOP_DEVICE} ${WANTED_SIZE}M
 
-FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
-FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024` # some blocks for mbr and multiple block size (4k)
+	FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
+	FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024` # some blocks for mbr and multiple block size (4k)
+fi
 
 kpartx -d ${AMI_NAME}
 rmdir ${MOUNT_DIR}
 
-# Rebuild a smaller partition table
-parted -s ${AMI_NAME} rm 1
-parted -s ${AMI_NAME} mkpart primary ext3 1M ${FINAL_IMG_SIZE}M
-parted -s ${AMI_NAME} set 1 boot on
-install-mbr ${AMI_NAME}
+if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
+	# Rebuild a smaller partition table
+	parted -s ${AMI_NAME} rm 1
+	parted -s ${AMI_NAME} mkpart primary ext3 1M ${FINAL_IMG_SIZE}M
+	parted -s ${AMI_NAME} set 1 boot on
+	install-mbr ${AMI_NAME}
 
-# Add 2M for the 1M at the beginning of the partition and some additionnal space 
-truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
+	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
+	truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
+fi
+
 qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
-

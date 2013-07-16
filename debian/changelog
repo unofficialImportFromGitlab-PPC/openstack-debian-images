@@ -6,9 +6,11 @@ openstack-debian-images (0.3) UNRELEASED; urgency=low
     backports in Wheezy, since they are now available from there.
   * Added a --source-list-mirror option to fill the sources.list with custom
     mirror addresses.
+  * Added an option to choose the initial image size.
+  * Made Mehdi's feature to automatically shrink images to a minimal size as
+    optional, since it doesn't entirely work and is very slow.
 
   [ Mehdi Abaakouk ]
-  * Allow to create image larger than 1G
   * Shrink image to a minimal size
   * Umount chroot and delete devmapper stuff on error/interruption
 
