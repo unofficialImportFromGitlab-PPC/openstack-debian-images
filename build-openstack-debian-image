@@ -7,11 +7,14 @@ usage() {
 	echo "Usage: $0 --release|-r <jessie|wheezy> [options]
 Options are:
  --minimal|-m
- --debootstrap-url|-u <debootstrap-mirror>
- --sources.list-mirror|-s <source-list-mirror>
+ --debootstrap-url|-u <debootstrap-mirror> (default: http://http.debian.net/debian)
+ --sources.list-mirror|-s <source-list-mirror> (default: http://http.debian.net/debian)
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>
- --image-size|-is <image-size>"
+ --image-size|-is <image-size> (default: 1G)
+ --automatic-resize|-ar
+ --automatic-resize-space|-ars <suplementary-space> (default: 50M)
+For more info: man $0"
 	exit 1
 }
 
@@ -40,13 +43,17 @@ for i in $@ ; do
 		EXTRA=no
 		shift
 	;;
-	# Take care, this option makes it impossible to write files inside
-	# your raw image (input/output error) for a currently unknown reason.
-	# Use with care, if you know what you are doing, and until there is
-	# a fix for this.
-	# Therefore, this option is currently not documented.
 	"--automatic-resize"|"-ar")
 		AUTOMATIC_RESIZE=yes
+		shift
+	;;
+	"--automatic-resize-space"|"-ars")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the suplementary space"
+			usage
+		fi
+		AUTOMATIC_RESIZE_SPACE=${2}
+		shift
 		shift
 	;;
 	"--image-size"|"-is")
@@ -99,17 +106,19 @@ if [ -z "${RELEASE}" ] ; then
 	usage
 fi
 if [ -z "${DEB_MIRROR}" ] ; then
-	DEB_MIRROR=http://ftp.uk.debian.org/debian
+	DEB_MIRROR=http://http.debian.net/debian
 fi
 if [ -z "${EXTRA_PACKAGES}" ] ; then
 	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
 fi
-
 if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
 	SOURCE_LIST_MIRROR=http://http.debian.net/debian
 fi
 if [ -z "${IMAGE_SIZE}" ] ; then
 	IMAGE_SIZE=1
+fi
+if [ -z "${AUTOMATIC_RESIZE_SPACE}" ] ; then
+	AUTOMATIC_RESIZE_SPACE=50
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd
@@ -354,7 +363,7 @@ fsck.ext3 -f /dev/mapper/${LOOP_DEVICE} || true
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	resize2fs -M /dev/mapper/${LOOP_DEVICE}
 	FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
-	WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + 200` # Add 200M
+	WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + ${AUTOMATIC_RESIZE_SPACE}` # Add ${AUTOMATIC_RESIZE_SPACE}M
 	resize2fs /dev/mapper/${LOOP_DEVICE} ${WANTED_SIZE}M
 
 	FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`

@@ -95,8 +95,28 @@ Select the image size (default to 1 GBytes if this option is ommited). Only
 usefull if you need to use a custom script hook (see below).
 
 .LP
-.B \-\-hook\-script
-.I hook-script
+.B \-\-automatic-resize|\-ar
+.IP
+
+Reduce the image to the minimum HDD size possible. The partition of the
+image will be first shrinked with resize2fs -M, then the space it takes will
+be used to do a 2nd resize2fs adding a bit of extra space for the operating
+system to write runtime data (see below). Since this option takes a lot of
+time, it is disabled by default.
+
+.LP
+.B \-\-automatic\-resize\-space|\-ars
+.I <suplementary-space>
+.IP
+
+Size of the suplementary space added to the partition after it is resized
+to the minimum. If this option is ommited, then 50G is used. If
+.B \-\-automatic-resize
+isn't used, then it is useless to set this option, which will be ignored.
+
+.LP
+.B \-\-hook\-script|\-hs
+.I <hook-script>
 .IP
 
 If you wish to further customize the generated cloud image, you can use a
@@ -108,6 +128,26 @@ path where the image is mounted
 
 .B BODI_RELEASE
 name of the Debian release that is being bootstraped
+
+.SH EXAMPLE
+.IP
+
+.IP
+Here is an example with the short parameter names:
+
+.LP
+.I build-openstack-debian-image -u http://ftp.fr.debian.org/debian -s \
+http://ftp.fr.debian.org/debian -is 5 -e libapache2-mod-php5 -hs \
+~/customize\-my\-image -ar -ars 100
+
+.IP
+And the same but with long names for options:
+
+.LP
+.I build-openstack-debian-image \-\-debootstrap\-url http://ftp.fr.debian.org/debian \
+\-\-sources.list\-mirror http://ftp.fr.debian.org/debian \-\-image-size 5 \
+\-\-extra\-packages libapache2-mod-php5 \-\-hook\-script ~/customize\-my\-image \
+\-\-automatic-resize \-\-automatic\-resize\-space 100
 
 .SH AUTHORS
 
