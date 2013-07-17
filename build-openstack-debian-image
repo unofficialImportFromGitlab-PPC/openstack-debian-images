@@ -371,7 +371,7 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	parted -s ${AMI_NAME} set 1 boot on
 
 	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
-	truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
+	truncate -s `expr 3 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
 	install-mbr ${AMI_NAME}
 fi
 
