@@ -148,6 +148,7 @@ qemu-img create ${AMI_NAME} ${IMAGE_SIZE}G
 
 ${PARTED} -s ${AMI_NAME} mktable msdos
 ${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1M 100%
+${PARTED} -s ${AMI_NAME} set 1 boot on
 RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
