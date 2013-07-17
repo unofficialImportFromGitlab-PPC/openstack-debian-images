@@ -149,6 +149,7 @@ qemu-img create ${AMI_NAME} ${IMAGE_SIZE}G
 ${PARTED} -s ${AMI_NAME} mktable msdos
 ${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1M 100%
 ${PARTED} -s ${AMI_NAME} set 1 boot on
+install-mbr ${AMI_NAME}
 RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
@@ -371,7 +372,7 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 
 	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
 	truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
+	install-mbr ${AMI_NAME}
 fi
 
-install-mbr ${AMI_NAME}
 qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
