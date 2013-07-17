@@ -367,10 +367,10 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	parted -s ${AMI_NAME} rm 1
 	parted -s ${AMI_NAME} mkpart primary ext3 1M ${FINAL_IMG_SIZE}M
 	parted -s ${AMI_NAME} set 1 boot on
-	install-mbr ${AMI_NAME}
 
 	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
 	truncate -s `expr 1 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
 fi
 
+install-mbr ${AMI_NAME}
 qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
