@@ -99,7 +99,7 @@ usefull if you need to use a custom script hook (see below).
 .IP
 
 Reduce the image to the minimum HDD size possible. The partition of the
-image will be first shrinked with resize2fs -M, then the space it takes will
+image will be first shrinked with resize2fs \-M, then the space it takes will
 be used to do a 2nd resize2fs adding a bit of extra space for the operating
 system to write runtime data (see below). Since this option takes a lot of
 time, it is disabled by default.
@@ -149,8 +149,8 @@ name of the Debian release that is being bootstraped
 Here is an example with the short parameter names:
 
 .LP
-.I build\-openstack\-debian\-image \-u http://ftp.fr.debian.org/debian -s \
-http://ftp.fr.debian.org/debian \-is 5 \-e libapache2\-mod\-php5 -hs \
+.I build\-openstack\-debian\-image \-u http://ftp.fr.debian.org/debian \-s \
+http://ftp.fr.debian.org/debian \-is 5 \-e libapache2\-mod\-php5 \-hs \
 ~/customize\-my\-image \-ar \-ars 100
 
 .IP
