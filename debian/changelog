@@ -9,6 +9,7 @@ openstack-debian-images (0.3) UNRELEASED; urgency=low
   * Added an option to choose the initial image size.
   * Made Mehdi's feature to automatically shrink images to a minimal size as
     optional, since it doesn't entirely work and is very slow.
+  * Added an option to set a default root password.
 
   [ Mehdi Abaakouk ]
   * Shrink image to a minimal size

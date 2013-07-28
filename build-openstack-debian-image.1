@@ -123,6 +123,19 @@ If you wish to further customize the generated cloud image, you can use a
 hook script. When called, build-openstack-debian-image will fill up some
 BODI_* environment variable for the hook script to use as per below:
 
+.LP
+.B \-\-password|\-p
+.I <root-password>
+.IP
+
+Defines a default root password for your image. This option is dangerous,
+first because it will show the root password to the user of the computer
+building the image if using "ps", then also because it is best to not set
+a default root password at all if possible. However, this option is still
+there, because sometimes, you need to be able to debug your image, and
+login through the web console of horizon. In a production environment, do
+not use this option.
+
 .B BODI_CHROOT_PATH
 path where the image is mounted
 

@@ -14,6 +14,7 @@ Options are:
  --image-size|-is <image-size> (default: 1G)
  --automatic-resize|-ar
  --automatic-resize-space|-ars <suplementary-space> (default: 50M)
+ --password|-p <root-password> (dangerous option: avoid it if possible)
 For more info: man $0"
 	exit 1
 }
@@ -96,6 +97,13 @@ for i in $@ ; do
 			usage
 		fi
 	;;
+	"--password"|"-p")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the root password"
+		fi
+		ROOT_PASSWORD=${2}
+		shift
+		shift
 	*)
 	;;
 	esac
@@ -198,8 +206,10 @@ debootstrap --verbose \
 ############################
 ### Customize: access to the VM ###
 # # # # # # # # # # # # # # # # # #
-# Setup default root password to: password
-#chroot ${MOUNT_DIR} sh -c "echo root:password | chpasswd"
+# Setup default root password to what has been set on the command line
+if [ -n "${ROOT_PASSWORD}" ] ; then
+	chroot ${MOUNT_DIR} sh -c "echo root:${ROOT_PASSWORD} | chpasswd"
+fi
 
 # Otherwise, we have a huge backdoor, since the root password
 # is always the same.
