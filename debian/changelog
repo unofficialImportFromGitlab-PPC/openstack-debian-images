@@ -1,6 +1,6 @@
-openstack-debian-images (0.4) UNRELEASED; urgency=low
+openstack-debian-images (0.4) unstable; urgency=low
 
-  * Fixed a typo in package description.
+  * Fixed a typo in package description (Closes: #718363).
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 29 Jul 2013 19:11:27 +0800
 
