@@ -225,11 +225,6 @@ mkdir -p ${MOUNT_DIR}/etc/sudoers.d
 echo "debian ALL = NOPASSWD: ALL" >${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 
-# cloud-init will put the ssh key in whatever is
-# configured in the sshd_config. So we put the
-# debian standard config as explicit in sshd_config.
-sed -i -e 's|^#AuthorizedKeysFile[ \t]%h/.ssh/authorized_keys|AuthorizedKeysFile %h/.ssh/authorized_keys2|' ${MOUNT_DIR}/etc/ssh/sshd_config
-
 ### Customize: misc stuff ###
 # # # # # # # # # # # # # # #
 # Setup fstab
