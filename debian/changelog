@@ -1,3 +1,10 @@
+openstack-debian-images (0.5) unstable; urgency=low
+
+  * Restore the default sshd configuration to allow authorized_keys and
+    authorized_keys2 files
+
+ -- Mehdi Abaakouk <sileht@sileht.net>  Thu, 10 Oct 2013 13:07:31 +0200
+
 openstack-debian-images (0.4) unstable; urgency=low
 
   * Fixed a typo in package description (Closes: #718363).
