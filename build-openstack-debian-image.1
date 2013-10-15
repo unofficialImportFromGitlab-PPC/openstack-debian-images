@@ -115,15 +115,6 @@ to the minimum. If this option is ommited, then 50G is used. If
 isn't used, then it is useless to set this option, which will be ignored.
 
 .LP
-.B \-\-hook\-script|\-hs
-.I <hook-script>
-.IP
-
-If you wish to further customize the generated cloud image, you can use a
-hook script. When called, build-openstack-debian-image will fill up some
-BODI_* environment variable for the hook script to use as per below:
-
-.LP
 .B \-\-password|\-p
 .I <root-password>
 .IP
@@ -135,6 +126,15 @@ a default root password at all if possible. However, this option is still
 there, because sometimes, you need to be able to debug your image, and
 login through the web console of horizon. In a production environment, do
 not use this option.
+
+.LP
+.B \-\-hook\-script|\-hs
+.I <hook-script>
+.IP
+
+If you wish to further customize the generated cloud image, you can use a
+hook script. When called, build-openstack-debian-image will fill up some
+BODI_* environment variable for the hook script to use as per below:
 
 .B BODI_CHROOT_PATH
 path where the image is mounted
