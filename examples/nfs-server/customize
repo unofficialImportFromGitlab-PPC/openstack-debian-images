@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -e
+
+echo "################################"
+echo "### SETTING UP CUSTOMIZATION ###"
+echo "################################"
+
+set -x
+
+# Fill this with for example: 10.0.0.0/255.255.255.0
+# Until you write something in, the script will fail.
+AUTHORIZED_NETWORK=""
+
+if [ -z "${AUTHORIZED_NETWORK}" ] ; then
+	exit 1
+fi
+
+mkdir ${BODI_CHROOT_PATH}/nfs
+
+echo "# Number of servers to start up
+RPCNFSDCOUNT=8
+
+# Options for rpc.mountd
+RPCMOUNTDOPTS=\"-p 2048\"" >${BODI_CHROOT_PATH}/etc/default/nfs-kernel-server
+
+echo "/nfs ${AUTHORIZED_NETWORK}(rw,no_root_squash,subtree_check)" >>${BODI_CHROOT_PATH}/etc/exports
+
+echo "# If you do not set values for the NEED_ options, they will be attempted
+# autodetected; this should be sufficient for most people. Valid alternatives
+# for the NEED_ options are "yes" and "no".
+
+# Do you want to start the statd daemon? It is not needed for NFSv4.
+NEED_STATD=yes
+
+# Options for rpc.statd.
+#   Should rpc.statd listen on a specific port? This is especially useful
+#   when you have a port-based firewall. To use a fixed port, set this
+#   this variable to a statd argument like: \"--port 4000 --outgoing-port 4001\".
+#   For more information, see rpc.statd(8) or http://wiki.debian.org/SecuringNFS
+STATDOPTS=\"-p 2046 -o 2047\"
+
+# Do you want to start the idmapd daemon? It is only needed for NFSv4.
+NEED_IDMAPD=
+
+# Do you want to start the gssd daemon? It is required for Kerberos mounts.
+NEED_GSSD=yes " >${BODI_CHROOT_PATH}/etc/default/nfs-common

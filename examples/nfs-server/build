@@ -1,0 +1,79 @@
+#!/bin/sh
+
+set -e
+
+# Image size in GB
+IMAGE_SIZE=150
+# Fill this with for example: 10.0.0.0/24
+YOUR_NETWORK_IP=""
+# Fill this with for example: 10.0.0.151
+NFS_SERVER_IP=""
+
+# Fill in your key name in Nova
+SSH_KEY_NAME=""
+
+# Fill in the hostname you wish to use for this NFS server
+MY_HOSTNAME=""
+
+# Name of your local lan as returned by "quantum net-list"
+LOCAL_LAN_NAME=""
+
+if [ -z "${YOUR_NETWORK_IP}" ] || [ -z "${NFS_SERVER_IP}" ] || [ -z "${SSH_KEY_NAME}" ] || [ -z "${MY_HOSTNAME}" ]  || [ -z "${LOCAL_LAN_NAME}" ] ; then
+	echo "parameters not configured in the script $0"
+	exit 1
+fi
+
+NEUTRON=`which neutron`
+if [ -z "${NEUTRON}" ] ; then
+	NEUTRON=`which quantum`
+fi
+if [ -z "${NEUTRON}" ] ; then
+	echo "Please install neutron (or quantum) client"
+	exit 1
+fi
+
+build-openstack-debian-image -r wheezy \
+	-e nfs-kernel-server,nfs-common \
+	-hs ./customize
+
+if ! [ -e version ] ; then
+	echo 0 > version
+fi
+VERSION=`cat version`
+VERSION=$(( ${VERSION} + 1 ))
+echo ${VERSION} >version
+
+# 
+rm debian-wheezy-7.0.0-3-amd64.raw
+mv debian-wheezy-7.0.0-3-amd64.qcow2 wheezy-nfs-${VERSION}.qcow2
+echo "Uploading image to Glance..."
+glance image-create --name="Wheezy NFS ${VERSION}" --disk-format=qcow2 --container-format=bare --file wheezy-nfs-${VERSION}.qcow2
+echo "Creating cinder disk out of the Glance image..."
+IMAGE_ID=`glance image-list | grep "Wheezy NFS ${VERSION}" | awk '{print $2}'`
+cinder create --image-id ${IMAGE_ID} --display-name "Wheezy NFS ${VERSION}" ${IMAGE_SIZE}
+echo "Deleting Glance image..."
+glance image-delete ${IMAGE_ID}
+
+echo -n "Waiting for Cinder image to become bootable."
+CINDER_IMAGE_BOOTABLE=`cinder list | grep "Wheezy NFS 4" | awk '{print $14}'`
+while [ "${CINDER_IMAGE_BOOTABLE}" != "true" ] ; do
+	sleep 2
+	echo -n "."
+done
+echo " done!"
+
+# Creates a static (fixed) IP ${NFS_SERVER_IP} in the quantum setup
+echo "Creating quantum static IP..."
+SUBNET_ID=`quantum subnet-list | grep ${YOUR_NETWORK_IP} | awk '{print $2}'`
+NET_ID=`quantum net-list | grep ${LOCAL_LAN_NAME} | awk '{print $2}'`
+quantum port-create --fixed-ip subnet_id=${SUBNET_ID},ip_address=${NFS_SERVER_IP} ${NET_ID}
+
+# Create a new VM using the "boot from volume" option
+echo "Booting instance..."
+IP_ONE=`quantum port-list | grep ${NFS_SERVER_IP} | awk '{print $2}'`
+BLOCK_DEV_ID=`nova volume-list | grep "Wheezy NFS ${VERSION}" | awk '{print $2}'`
+nova boot --block_device_mapping vda=${BLOCK_DEV_ID}::5:False --flavor 3 --nic port-id=${IP_ONE} --key-name ${SSH_KEY_NAME} ${MY_HOSTNAME}
+
+echo "All done. You can now wait until your NFS server becomes"
+echo "available. Note that it may take a lot of time, since its"
+echo "HDD image in Cinder will be resized at the first boot."
