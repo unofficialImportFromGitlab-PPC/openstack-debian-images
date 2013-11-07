@@ -1,4 +1,4 @@
-openstack-debian-images (0.5) UNRELEASED; urgency=low
+openstack-debian-images (0.5) unstable; urgency=low
 
   [ Mehdi Abaakouk ]
   * Restore the default sshd configuration to allow authorized_keys and
@@ -7,6 +7,8 @@ openstack-debian-images (0.5) UNRELEASED; urgency=low
   [ Thomas Goirand ]
   * Added a new example folder showing how to create a NFS cinder VM using a
     static IP in Quantum.
+  * Correctly writes in ${MOUNT_DIR}/etc/modules and not in the /etc/modules of
+    the computer creating the image (Closes: #728943).
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 25 Oct 2013 20:46:15 +0800
 
