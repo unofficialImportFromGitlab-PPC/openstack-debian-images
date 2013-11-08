@@ -165,7 +165,7 @@ qemu-img create ${AMI_NAME} ${IMAGE_SIZE}G
 #dd if=/dev/null bs=1M seek=1024 of=${AMI_NAME}
 
 ${PARTED} -s ${AMI_NAME} mktable msdos
-${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1M 100%
+${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1Mi 100%
 ${PARTED} -s ${AMI_NAME} set 1 boot on
 install-mbr ${AMI_NAME}
 RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
@@ -382,7 +382,7 @@ rmdir ${MOUNT_DIR}
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	# Rebuild a smaller partition table
 	parted -s ${AMI_NAME} rm 1
-	parted -s ${AMI_NAME} mkpart primary ext3 1M ${FINAL_IMG_SIZE}M
+	parted -s ${AMI_NAME} mkpart primary ext3 1Mi ${FINAL_IMG_SIZE}Mi
 	parted -s ${AMI_NAME} set 1 boot on
 
 	# Add 2M for the 1M at the beginning of the partition and some additionnal space 

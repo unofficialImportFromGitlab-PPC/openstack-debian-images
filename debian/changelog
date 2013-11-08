@@ -9,6 +9,8 @@ openstack-debian-images (0.5) unstable; urgency=low
     static IP in Quantum.
   * Correctly writes in ${MOUNT_DIR}/etc/modules and not in the /etc/modules of
     the computer creating the image (Closes: #728943).
+  * Corrects "Using the -ar option truncates 5% off the end of the resized
+    filesystem." by using Mi instead of M when using parted (Closes: #728939).
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 25 Oct 2013 20:46:15 +0800
 
