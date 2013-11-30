@@ -1,4 +1,4 @@
-openstack-debian-images (0.5) unstable; urgency=low
+openstack-debian-images (0.5) unstable; urgency=medium
 
   [ Mehdi Abaakouk ]
   * Restore the default sshd configuration to allow authorized_keys and
