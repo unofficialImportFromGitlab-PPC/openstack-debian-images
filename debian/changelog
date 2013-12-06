@@ -1,3 +1,11 @@
+openstack-debian-images (0.6) unstable; urgency=medium
+
+  * Fixes the console so that it works with both SPICE & horizon logs, thanks
+    to Jordan Pittier <jordan.pittier-ext@cloudwatt.com> for reporting and
+    finding the solution (Closes: #726619).
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 07 Dec 2013 00:01:07 +0800
+
 openstack-debian-images (0.5) unstable; urgency=medium
 
   [ Mehdi Abaakouk ]

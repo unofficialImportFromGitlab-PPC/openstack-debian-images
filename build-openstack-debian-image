@@ -336,7 +336,7 @@ echo "default linux
 timeout 1
 label linux
 kernel ${KERNEL}
-append initrd=${RAMDISK} root=/dev/vda1 ro quiet" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+append initrd=${RAMDISK} root=/dev/vda1 ro quiet console=ttyS0" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 #append initrd=${RAMDISK} root=/dev/vda1 console=tty0 console=ttyS0,115200 ro quiet" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 cp ${MOUNT_DIR}/boot/extlinux/extlinux.conf ${MOUNT_DIR}/extlinux.conf
 extlinux --install ${MOUNT_DIR}
