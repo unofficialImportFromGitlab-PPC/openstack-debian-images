@@ -3,6 +3,8 @@ openstack-debian-images (0.7) unstable; urgency=high
   * Adds echo "mount_default_fields:" in /etc/cloud/cloud.cfg to allow the
     automatic mount of /dev/vdb ephemeral disk.
   * Standards-Version: is now 3.9.5.
+  * Removes openstack-pkg-tools build-dependency, and made the include in
+    debian/rules not mandatory.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 08 Jan 2014 20:00:15 +0800
 
