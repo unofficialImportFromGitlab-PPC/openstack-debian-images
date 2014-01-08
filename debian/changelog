@@ -1,3 +1,10 @@
+openstack-debian-images (0.7) unstable; urgency=high
+
+  * Adds echo "mount_default_fields:" in /etc/cloud/cloud.cfg to allow the
+    automatic mount of /dev/vdb ephemeral disk.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 08 Jan 2014 20:00:15 +0800
+
 openstack-debian-images (0.6) unstable; urgency=medium
 
   * Fixes the console so that it works with both SPICE & horizon logs, thanks
