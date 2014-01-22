@@ -310,6 +310,7 @@ deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 chroot ${MOUNT_DIR} apt-get update
+chroot ${MOUNT_DIR} apt-get upgrade -y
 
 # Setup cloud-init, cloud-utils and cloud-initramfs-growroot
 # These are only available from backports in Wheezy
