@@ -1,3 +1,10 @@
+openstack-debian-images (0.8) unstable; urgency=medium
+
+  [ Thomas Bechtold <toabctl@debian.org> ]
+  * Allow upgrades during build of image.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 02 May 2014 16:40:21 +0000
+
 openstack-debian-images (0.7) unstable; urgency=high
 
   * Adds echo "mount_default_fields:" in /etc/cloud/cloud.cfg to allow the
