@@ -168,7 +168,7 @@ ${PARTED} -s ${AMI_NAME} mktable msdos
 ${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1Mi 100%
 ${PARTED} -s ${AMI_NAME} set 1 boot on
 install-mbr ${AMI_NAME}
-RESULT_KPARTX=`kpartx -av ${AMI_NAME} 2>&1`
+RESULT_KPARTX=`kpartx -asv ${AMI_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
 	LOOP_DEVICE=`echo ${RESULT_KPARTX} | cut -d" " -f3`
