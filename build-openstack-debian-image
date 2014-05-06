@@ -324,6 +324,7 @@ datasource_list: [ Ec2 ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
 # Needed to have automatic mounts of /dev/vdb
 echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
+echo "manage_etc_hosts: true" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
 
 # Setting-up initramfs
 chroot ${MOUNT_DIR} update-initramfs -u

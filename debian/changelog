@@ -2,6 +2,7 @@ openstack-debian-images (0.8) unstable; urgency=medium
 
   [ Thomas Goirand ]
   * Added the flag -s to kpart -asv. (Closes: #741477).
+  * Adds manage_etc_hosts: true in /etc/cloud/cloud.cfg.
 
   [ Thomas Bechtold <toabctl@debian.org> ]
   * Allow upgrades during build of image.
