@@ -1,3 +1,10 @@
+openstack-debian-images (0.10) unstable; urgency=medium
+
+  * Added an option to choose the login username, thanks to Jordan Pittier
+    <jordan.pittier@gmail.com> for providing the feature (Closes: #752787).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 03 Jul 2014 17:19:46 +0800
+
 openstack-debian-images (0.9) unstable; urgency=medium
 
   * Adds manage_etc_hosts: true in /etc/cloud/cloud.cfg.

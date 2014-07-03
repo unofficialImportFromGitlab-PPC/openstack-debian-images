@@ -19,11 +19,13 @@ during the boot process, cloud\-init will resize the root partition on the fly
 recent kernel allow that for ext3).
 
 Cloud\-init is setup to use an Ec2 metadata server, which is what OpenStack is
-compatible with. A "debian" user will be used to receive the ssh key from the
-user data blob. This user is setup without a password (eg: adduser
-\-\-disabled\-password).  Once logged as this "debian" user in your new virtual
-machine, you can "sudo" to root from that user, without needing a password. The
-root password is "password" by default, and ssh into the root user without
+compatible with. A "debian" (configurable with the use of the
+.B --login
+option) user will be used to receive the ssh key from the user data blob.
+This user is setup without a password (eg: adduser \-\-disabled\-password).
+Once logged as this "debian" user in your new virtual machine, you can
+"sudo" to root from that user, without needing a password. The root
+password is "password" by default, and ssh into the root user without
 using an ssh keypair is disabled by default (PermitRootLogin without-password
 is set in /etc/ssh/sshd_config).
 
@@ -113,6 +115,13 @@ Size of the suplementary space added to the partition after it is resized
 to the minimum. If this option is ommited, then 50G is used. If
 .B \-\-automatic-resize
 isn't used, then it is useless to set this option, which will be ignored.
+
+.LP
+.B \-\-login|\-l
+.I <user-login>
+.IP
+
+Change the login name (default to debian) for the user created by Cloud-Init.
 
 .LP
 .B \-\-password|\-p

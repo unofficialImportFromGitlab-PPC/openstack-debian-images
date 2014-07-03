@@ -14,6 +14,7 @@ Options are:
  --image-size|-is <image-size> (default: 1G)
  --automatic-resize|-ar
  --automatic-resize-space|-ars <suplementary-space> (default: 50M)
+ --login|-l <userlogin> (default: debian)
  --password|-p <root-password> (dangerous option: avoid it if possible)
 For more info: man $0"
 	exit 1
@@ -97,6 +98,15 @@ for i in $@ ; do
 			usage
 		fi
 	;;
+	"--login"|"-l")
+		if [ -z "${2}" ] ; then
+			echo "No parameter defining the user login"
+			usage
+		fi
+		USER_LOGIN=${2}
+		shift
+		shift
+	;;
 	"--password"|"-p")
 		if [ -z "${2}" ] ; then
 			echo "No parameter defining the root password"
@@ -128,6 +138,9 @@ if [ -z "${IMAGE_SIZE}" ] ; then
 fi
 if [ -z "${AUTOMATIC_RESIZE_SPACE}" ] ; then
 	AUTOMATIC_RESIZE_SPACE=50
+fi
+if [ -z "${USER_LOGIN}" ] ; then
+	USER_LOGIN=debian
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd
@@ -216,8 +229,8 @@ fi
 # is always the same.
 sed -i "s/PermitRootLogin yes/PermitRootLogin without-password/" ${MOUNT_DIR}/etc/ssh/sshd_config
 
-# Add a default "debian" user which is used by cloud-init by default
-chroot ${MOUNT_DIR} adduser --gecos Debian-cloud-init-user --disabled-password --quiet debian
+# Add a default user which is used by cloud-init by default
+chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
 
 # Adds the "debian" user to sudoers, since that is the way
 # cloud-init grant access
@@ -325,6 +338,9 @@ datasource_list: [ Ec2 ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 # Needed to have automatic mounts of /dev/vdb
 echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
 echo "manage_etc_hosts: true" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
+
+# Set the cloud init default user (required for the keypair to be put in the right home directory)
+sed -i "s/name: debian/name: ${USER_LOGIN}/" ${MOUNT_DIR}/etc/cloud/cloud.cfg
 
 # Setting-up initramfs
 chroot ${MOUNT_DIR} update-initramfs -u
