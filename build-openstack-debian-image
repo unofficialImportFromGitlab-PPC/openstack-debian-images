@@ -357,8 +357,8 @@ echo "default linux
 timeout 1
 label linux
 kernel ${KERNEL}
-append initrd=${RAMDISK} root=/dev/vda1 ro quiet console=ttyS0" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
-#append initrd=${RAMDISK} root=/dev/vda1 console=tty0 console=ttyS0,115200 ro quiet" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+append initrd=${RAMDISK} root=/dev/vda1 console=tty0 console=ttyS0,115200 ro quiet" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+#append initrd=${RAMDISK} root=/dev/vda1 ro quiet console=ttyS0" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 cp ${MOUNT_DIR}/boot/extlinux/extlinux.conf ${MOUNT_DIR}/extlinux.conf
 extlinux --install ${MOUNT_DIR}
 #chroot ${MOUNT_DIR} extlinux-update
@@ -411,4 +411,11 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	install-mbr ${AMI_NAME}
 fi
 
-qemu-img convert -c -f raw ${AMI_NAME} -O qcow2 ${QCOW2_NAME}
+QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
+if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
+	OTHER_QEMU_IMG_OPTIONS=" -O compat=0.10"
+else
+	OTHER_QEMU_IMG_OPTIONS=""
+fi
+
+qemu-img convert -c -f raw ${AMI_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}

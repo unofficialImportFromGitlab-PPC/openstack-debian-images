@@ -1,3 +1,12 @@
+openstack-debian-images (0.11) unstable; urgency=medium
+
+  * Using -O compat=0.10 when qemu-img is greater than 1.0.
+  * Using "console=tty0 console=ttyS0,115200" as boot parameter. The issue to
+    not being able to log into multiple console is in bootlogd (see Debian bug
+    181756).
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 20 Jul 2014 13:30:18 +0800
+
 openstack-debian-images (0.10) unstable; urgency=medium
 
   * Added an option to choose the login username, thanks to Jordan Pittier
