@@ -411,11 +411,11 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	install-mbr ${AMI_NAME}
 fi
 
-QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
-if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
-	OTHER_QEMU_IMG_OPTIONS=" -O compat=0.10"
-else
+#QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
+#if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
+#	OTHER_QEMU_IMG_OPTIONS=" -O compat=0.10"
+#else
 	OTHER_QEMU_IMG_OPTIONS=""
-fi
+#fi
 
 qemu-img convert -c -f raw ${AMI_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
