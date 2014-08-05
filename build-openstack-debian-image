@@ -353,6 +353,7 @@ rm ${MOUNT_DIR}/var/cache/apt/archives/*.deb
 KERNEL=`chroot ${MOUNT_DIR} find boot -name 'vmlinuz-*'`
 RAMDISK=`chroot ${MOUNT_DIR} find boot -name 'initrd.img-*'`
 UUID=`blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE}`
+mkdir -p ${MOUNT_DIR}/boot/extlinux 
 echo "default linux
 timeout 1
 label linux
