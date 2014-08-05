@@ -333,7 +333,7 @@ fi
 
 # For OpenStack, we would like to use Ec2 and no other API
 echo "# to update this file, run dpkg-reconfigure cloud-init
-datasource_list: [ Ec2 ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+datasource_list: [ Ec2, ConfigDrive, OpenStack ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
 # Needed to have automatic mounts of /dev/vdb
 echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
