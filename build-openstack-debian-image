@@ -235,7 +235,7 @@ chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet 
 # Adds the "debian" user to sudoers, since that is the way
 # cloud-init grant access
 mkdir -p ${MOUNT_DIR}/etc/sudoers.d
-echo "debian ALL = NOPASSWD: ALL" >${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
+echo "${USER_LOGIN} ALL = NOPASSWD: ALL" >${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 
 ### Customize: misc stuff ###
