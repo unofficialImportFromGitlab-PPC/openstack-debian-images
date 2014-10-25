@@ -2,6 +2,7 @@ openstack-debian-images (1.0) unstable; urgency=medium
 
   * Fixed the sudoers file to support the --login option. (Closes: #766234)
   * Finally calling this version 1.0 as it seems working well! :)
+  * Standards-Version is now 3.9.6 (no change).
 
  -- Thomas Goirand <zigo@debian.org>  Sat, 25 Oct 2014 15:49:36 +0800
 
