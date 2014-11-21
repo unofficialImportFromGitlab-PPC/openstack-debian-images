@@ -1,3 +1,9 @@
+openstack-debian-images (1.1) unstable; urgency=medium
+
+  * Fixed compat option for newer qemu.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 21 Nov 2014 13:48:26 +0800
+
 openstack-debian-images (1.0) unstable; urgency=medium
 
   * Fixed the sudoers file to support the --login option. (Closes: #766234)
