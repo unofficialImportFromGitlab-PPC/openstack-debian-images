@@ -1,6 +1,6 @@
 openstack-debian-images (1.1) unstable; urgency=medium
 
-  * Fixed compat option for newer qemu.
+  * Fixed compat option for newer qemu (Closes: #770943).
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 21 Nov 2014 13:48:26 +0800
 
