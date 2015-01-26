@@ -192,14 +192,16 @@ else
 fi
 
 cleanup(){
+	error=$?
 	[ ! -d "${MOUNT_DIR}" ] && return
 	echo
-	echo "error, umounting $MOUNT_DIR"
+	echo "error $error, umounting $MOUNT_DIR"
 	chroot ${MOUNT_DIR} umount /proc || true
 	chroot ${MOUNT_DIR} umount /sys || true
 	umount ${MOUNT_DIR}
 	rmdir ${MOUNT_DIR}
 	kpartx -d ${AMI_NAME}
+	exit $error
 }
 trap "cleanup" EXIT TERM INT
 
