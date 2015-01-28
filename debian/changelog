@@ -1,8 +1,8 @@
 openstack-debian-images (1.2) unstable; urgency=medium
 
-  * Uses 2GB by default as for the image, as 1GB isn't big enough for building
-    it anymore (Closes: #776217). Thanks to Steve McIntyre <steve@einval.com>
-    for the bug report.
+  * Uses 2GB by default as initial HDD space for the image, as 1GB isn't big
+    enough for building a Jessie image anymore (Closes: #776217). Thanks to
+    Steve McIntyre <steve@einval.com> for the bug report.
   * Error as non-zero in case of an error (Closes: #776216). Thanks to Steve
     McIntyre <steve@einval.com> for the bug report and patch.
   * Allow stretch and buster as release names.
