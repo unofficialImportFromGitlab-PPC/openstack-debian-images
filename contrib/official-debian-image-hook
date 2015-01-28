@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# This script is used when generating the Debian official
+# OpenStack image to list all source packages shipped in
+# the image, and later on generate a tarball containing
+# them all.
+
+TOP="/w"
+LOCALCONF="${TOP}/in"
+STATE="${TOP}/state"
+
+. ${LOCALCONF}/common.sh
+
+BUILDNAME="openstack-jessie"
+WORK="${TOP}/work/${BUILDNAME}"
+
+# Write the script inside the image chroot
+cat > $BODI_CHROOT_PATH/list-sources <<EOF
+#!/bin/sh
+for PKG in \$(COLUMNS=500 dpkg -l | awk '/^ii/ {printf "%s ",\$2}'); do
+ apt-get source -qq --print-uris \$PKG
+done
+EOF
+
+# Execute the script and delete it
+chmod +x $BODI_CHROOT_PATH/list-sources
+chroot $BODI_CHROOT_PATH /list-sources > $WORK/sources
+rm -f $BODI_CHROOT_PATH/list-sources
