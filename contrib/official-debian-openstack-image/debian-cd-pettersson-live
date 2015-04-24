@@ -1,0 +1,107 @@
+#!/bin/bash
+
+#set -x
+
+NL="
+"
+OLDIFS=$IFS
+
+TOP="/w"
+LOCALCONF="${TOP}/in"
+STATE="${TOP}/state"
+
+. ${LOCALCONF}/common.sh
+. ${LOCALCONF}/CONF.sh
+
+# Rename the output files to something more appropriate for our use
+RENAME="s,debian-$CODENAME-(.*)-amd64,debian-$VERSION-openstack-amd64,"
+
+mkdir -p ${STATE}
+rm -rf ${STATE}/*
+BUILDNAME="openstack-$CODENAME"
+WORK="${TOP}/work/${BUILDNAME}"
+OUT="${TOP}/out/${BUILDNAME}"
+LOG="${TOP}/out/log"
+mkdir -p ${WORK} ${OUT}
+
+SOURCE_ERROR=0
+
+grab_file () {
+    REMOTE=$(echo $1 | tr -d \')
+    LOCAL="source/$2"
+    SIZE=$3
+    SHA=$4
+
+    if [ ! -f $LOCAL ] ; then
+	wget -O $LOCAL $REMOTE >> ${LOG}/${BUILDNAME}.log
+	local_size=$(stat -c %s $LOCAL)
+	check_alg=${SHA%%:*}
+	check_prog="sha"${check_alg##SHA}"sum"
+	local_check=$(${check_prog} < $LOCAL | awk '{print $1}')
+	if [ ${local_size} != $SIZE ] ; then
+	    echo "Size mismatch for $REMOTE" >> ${LOG}/${BUILDNAME}.log
+	    SOURCE_ERROR=1
+	fi
+	if [ ${check_alg}":"${local_check} != $SHA ] ; then
+	    echo "Checksums mismatch for $REMOTE" >> ${LOG}/${BUILDNAME}.log
+	    echo ${check_alg}":"${local_check}
+	    echo $SHA
+	    SOURCE_ERROR=1
+	fi
+    fi
+}
+
+cd ${WORK}
+
+BUILDSTART=$(now)
+log "Starting full OpenStack image build (codename $CODENAME, version $VERSION) at $BUILDSTART"
+
+START=$(now)
+
+build-openstack-debian-image \
+    -hs $LOCALCONF/openstack-hook \
+    -u http://ftp.se.debian.org/debian \
+    -r $CODENAME \
+    -is 2 2>&1 >> ${LOG}/${BUILDNAME}.log
+
+ERROR=$?
+END=$(now)
+time_spent=$(calc_time $CKSUMSTART $END)
+
+if [ $ERROR -eq 0 ] ; then
+    log "successful build started at $START, ended at $END (took $time_spent)"
+    if [ "$RENAME"x != ""x ] ; then
+	rename -v "$RENAME" * >> ${LOG}/${BUILDNAME}.log
+    fi
+
+    cd ${WORK}
+    mkdir source
+
+    IFS="$NL"
+    for line in $(cat sources); do
+	IFS=$OLDIFS
+	grab_file $line
+	IFS="$NL"
+    done
+    IFS=$OLDIFS
+    tar czf debian-$VERSION-openstack-source.tar.gz source
+    rm -rf source sources
+
+    mv * ${OUT}
+
+    CKSUMSTART=(now)
+    cd ${OUT} && checksum_files
+    END=$(now)
+    time_spent=$(calc_time $CKSUMSTART $END)
+    log "checksums started at $CKSUMSTART, ended at $END (took $time_spent)"
+else
+    log "FAILED with error $error, build started at $START, ended at $END (took $time_spent)"
+fi
+
+if [ $SOURCE_ERROR -ne 0 ] ; then
+    log "FAILED to download sources"
+    ERROR=2
+fi
+
+time_spent=$(calc_time $BUILDSTART $END)
+log "DONE. ERROR=$ERROR $BUILDNAME run started at $BUILDSTART, ended at $END (took $time_spent)"
