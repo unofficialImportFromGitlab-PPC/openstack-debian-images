@@ -319,16 +319,20 @@ echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
 echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main
 deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
 
-if [ "${RELEASE}" = "wheezy" ] ; then
-	echo "deb ${SOURCE_LIST_MIRROR} wheezy-updates main
-deb-src ${SOURCE_LIST_MIRROR} wheezy-updates main
-deb http://security.debian.org/ wheezy/updates main
-deb-src http://security.debian.org/ wheezy/updates main
+if [ "${RELEASE}" = "wheezy" ] || [ "${RELEASE}" = "jessie" ] ; then
+	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
+deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
+deb http://security.debian.org/ ${RELEASE}/updates main
+deb-src http://security.debian.org/ ${RELEASE}/updates main
+" >>${MOUNT_DIR}/etc/apt/sources.list
+fi
 
-deb ${SOURCE_LIST_MIRROR} wheezy-backports main
+if [ "${RELEASE}" = "wheezy" ] ; then
+	echo "deb ${SOURCE_LIST_MIRROR} wheezy-backports main
 deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
+
 chroot ${MOUNT_DIR} apt-get update
 chroot ${MOUNT_DIR} apt-get upgrade -y
 
