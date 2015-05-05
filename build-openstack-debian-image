@@ -252,10 +252,10 @@ chroot ${MOUNT_DIR} mount /proc || true
 echo "# disable pc speaker
 blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
 
-echo "# Required for cinder hotplug
-acpiphp
-pci_hotplug
-" >>${MOUNT_DIR}/etc/modules
+#echo "# Required for cinder hotplug
+#acpiphp
+#pci_hotplug
+#" >>${MOUNT_DIR}/etc/modules
 
 # Enable bash-completion by default
 if [ ${EXTRA} = "yes" ] ; then
