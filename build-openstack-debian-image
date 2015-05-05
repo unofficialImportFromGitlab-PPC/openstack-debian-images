@@ -128,7 +128,7 @@ if [ -z "${DEB_MIRROR}" ] ; then
 	DEB_MIRROR=http://http.debian.net/debian
 fi
 if [ -z "${EXTRA_PACKAGES}" ] ; then
-	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2
+	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2,nano
 fi
 if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
 	SOURCE_LIST_MIRROR=http://http.debian.net/debian
