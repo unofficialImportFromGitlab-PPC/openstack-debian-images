@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+OPENSTACK_RELEASE=kilo
+TARGET_OS=jessie
+
+# Adding Mirantis repository until murano-agent is in official backports
+echo "deb http://${OPENSTACK_RELEASE}-${TARGET_OS}.pkgs.mirantis.com/debian ${TARGET_OS}-${OPENSTACK_RELEASE}-backports main
+deb http://${OPENSTACK_RELEASE}-${TARGET_OS}.pkgs.mirantis.com/debian ${TARGET_OS}-${OPENSTACK_RELEASE}-backports-nochange main
+" >${BODI_CHROOT_PATH}/etc/apt/sources.list.d/mirantis-backports.list
+wget -O ${BODI_CHROOT_PATH}/${OPENSTACK_RELEASE}-${TARGET_OS}-archive-keyring_0.1_all.deb \
+	http://${OPENSTACK_RELEASE}-${TARGET_OS}.pkgs.mirantis.com/debian/pool/${TARGET_OS}-${OPENSTACK_RELEASE}-backports-nochange/main/k/${OPENSTACK_RELEASE}-${TARGET_OS}-archive-keyring/${OPENSTACK_RELEASE}-${TARGET_OS}-archive-keyring_0.1_all.deb
+chroot ${BODI_CHROOT_PATH} dpkg -i /${OPENSTACK_RELEASE}-${TARGET_OS}-archive-keyring_0.1_all.deb
+rm ${BODI_CHROOT_PATH}/${OPENSTACK_RELEASE}-${TARGET_OS}-archive-keyring_0.1_all.deb
+chroot ${BODI_CHROOT_PATH} apt-get update
+chroot ${BODI_CHROOT_PATH} apt-get install -y murano-agent
+

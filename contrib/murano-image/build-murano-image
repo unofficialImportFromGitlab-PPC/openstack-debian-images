@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e
+
+build-openstack-debian-image --release jessie --hook-script murano-agent-hook
