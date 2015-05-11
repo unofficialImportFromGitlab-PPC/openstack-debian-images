@@ -124,6 +124,24 @@ if [ -z "${RELEASE}" ] ; then
 	echo "Release not recognized: please specify the -r parameter."
 	usage
 fi
+case ${RELEASE} ; in
+	"wheezy")
+		RELEASE_NUM=7
+	;;
+
+	"jessie")
+		RELEASE_NUM=8
+	;;
+
+	"stretch")
+		RELEASE_NUM=9
+	;;
+
+	"buster")
+		RELEASE_NUM=10
+	;;
+esac
+
 if [ -z "${DEB_MIRROR}" ] ; then
 	DEB_MIRROR=http://http.debian.net/debian
 fi
@@ -162,7 +180,7 @@ if ! [ `whoami` = "root" ] ; then
 	echo "You have to be root to run this script"
 	exit 1
 fi
-FILE_NAME=debian-${RELEASE}-7.0.0-3-amd64
+FILE_NAME=debian-${RELEASE}-${RELEASE_NUM}.0.0-1-amd64
 AMI_NAME=${FILE_NAME}.raw
 QCOW2_NAME=${FILE_NAME}.qcow2
 rm -f ${AMI_NAME}

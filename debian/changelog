@@ -1,6 +1,8 @@
 openstack-debian-images (1.4) UNRELEASED; urgency=medium
 
   * Added script to build a murano image in the contrib folder.
+  * Now changing the version number on the output file depending on the release
+    name of Debian.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 06 May 2015 22:30:46 +0200
 
