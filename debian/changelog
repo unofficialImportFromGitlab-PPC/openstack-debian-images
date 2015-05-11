@@ -1,15 +1,15 @@
-openstack-debian-images (1.3~deb8u1) jessie-proposed-updates; urgency=medium
+openstack-debian-images (1.3~deb8u1) stable-proposed-updates; urgency=medium
 
-  * Backport of the version 1.3 from Sid to Jessie.
   * Fixed debian/gbp.conf to use debian/jessie as new packaging branch.
-  * Removed the tweak of /etc/modules, as acpiphp and pci_hotplug aren't in the
-    Jessie kernel: they are built not as module (Closes: #783340).
-  * Also adds security repository if building an image for Jessie. Previously,
-    this was done only for Wheezy (Closes: #783480).
-  * Adds dbus + libpam-systemd when building a Jessie image, and acpid +
-    acpi-support-base when building a Wheezy image, so that ACPI shutdown works
-    by default (Closes: #783448).
-  * Adds nano as default when not using the --minimal flag (Closes: #783341).
+  * Backport of the version 1.3 from Sid to Jessie:
+    - Removed the tweak of /etc/modules, as acpiphp and pci_hotplug aren't in
+      the Jessie kernel: they are built not as module (Closes: #783340).
+    - Also adds security repository if building an image for Jessie.
+      Previously, this was done only for Wheezy (Closes: #783480).
+    - Adds dbus + libpam-systemd when building a Jessie image, and acpid +
+      acpi-support-base when building a Wheezy image, so that ACPI shutdown
+      works by default (Closes: #783448).
+    - Adds nano as default when not using the --minimal flag (Closes: #783341).
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 07 May 2015 00:03:47 +0200
 
