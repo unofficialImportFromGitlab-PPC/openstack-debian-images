@@ -13,7 +13,7 @@ openstack-debian-images (1.4) unstable; urgency=medium
       VNC console.
     - Only install extlinux in /boot/extlinux. Some parts were installed in
       / only, others in both locations.
-    - Remove the quiet flag from the standard boot command. This is usefull on
+    - Remove the quiet flag from the standard boot command. This is useful on
       desktops to not clutter the boot screen, but not on a cloud image.
     - Use symlinks to kernel and initrd. This allows seamless kernel upgrades.
 
