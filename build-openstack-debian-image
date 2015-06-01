@@ -376,22 +376,26 @@ chroot ${MOUNT_DIR} update-initramfs -u
 
 rm ${MOUNT_DIR}/var/cache/apt/archives/*.deb
 
+# Set console for emergency and rescue shells
+SYSTEMD_DIR="${MOUNT_DIR}/etc/systemd/system/"
+for service in emergency.service rescue.service ; do
+    mkdir "${SYSTEMD_DIR}/${service}.d"
+    echo '[Service]
+ExecStart=
+ExecStart=-/bin/sh -c "/sbin/sulogin /dev/tty0; /bin/systemctl --fail --no-block default"' > "${SYSTEMD_DIR}/${service}.d/console.conf"
+done
+
 ###########################
 ### Setting-up extlinux ###
 ###########################
-KERNEL=`chroot ${MOUNT_DIR} find boot -name 'vmlinuz-*'`
-RAMDISK=`chroot ${MOUNT_DIR} find boot -name 'initrd.img-*'`
 UUID=`blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE}`
 mkdir -p ${MOUNT_DIR}/boot/extlinux 
 echo "default linux
 timeout 1
 label linux
-kernel ${KERNEL}
-append initrd=${RAMDISK} root=/dev/vda1 console=tty0 console=ttyS0,115200 ro quiet" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
-#append initrd=${RAMDISK} root=/dev/vda1 ro quiet console=ttyS0" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
-cp ${MOUNT_DIR}/boot/extlinux/extlinux.conf ${MOUNT_DIR}/extlinux.conf
-extlinux --install ${MOUNT_DIR}
-#chroot ${MOUNT_DIR} extlinux-update
+kernel /vmlinuz
+append initrd=/initrd.img root=/dev/vda1 console=tty0 console=ttyS0,115200 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+extlinux --install ${MOUNT_DIR}/boot/extlinux
 
 ###################
 ### HOOK SCRIPT ###

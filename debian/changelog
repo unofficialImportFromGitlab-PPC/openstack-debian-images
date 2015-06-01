@@ -1,8 +1,21 @@
-openstack-debian-images (1.4) UNRELEASED; urgency=medium
+openstack-debian-images (1.4) unstable; urgency=medium
 
   * Added script to build a murano image in the contrib folder.
   * Now changing the version number on the output file depending on the release
     name of Debian.
+  * Added patches contributed by Gaudenz Steinlin <gaudenz@debian.org>
+    (Closes: #784334):
+    - By default the rescue and emergency shell are started on the boot
+      console. This is ttyS0 on this image in order to have the boot output on
+      the serial console which is accessible by "nova console-log". But there
+      is no input device connected to this console, so the shells there are
+      pretty useless. On the other hand tty0 is accessible via the spice or
+      VNC console.
+    - Only install extlinux in /boot/extlinux. Some parts were installed in
+      / only, others in both locations.
+    - Remove the quiet flag from the standard boot command. This is usefull on
+      desktops to not clutter the boot screen, but not on a cloud image.
+    - Use symlinks to kernel and initrd. This allows seamless kernel upgrades.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 06 May 2015 22:30:46 +0200
 
