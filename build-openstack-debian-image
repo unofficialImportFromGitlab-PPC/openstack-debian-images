@@ -412,6 +412,7 @@ cleanup(){
 	echo "Finished."
 } 
 
+sync
 chroot ${MOUNT_DIR} umount /proc || true
 umount ${MOUNT_DIR}
 # Run FSCK so that resize can work
@@ -428,6 +429,7 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024` # some blocks for mbr and multiple block size (4k)
 fi
 
+sync
 kpartx -d ${AMI_NAME}
 rmdir ${MOUNT_DIR}
 

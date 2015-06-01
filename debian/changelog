@@ -19,6 +19,8 @@ openstack-debian-images (1.4) unstable; urgency=medium
   * Changed the loging for the list of packages for wheezy and other releases
     of Debian (it was selecting the list of package for Wheezy for Stretch and
     buster).
+  * Added a couple of sync calls to make sure we don't have a race condition
+    when removing the loopback device using kpartx.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 06 May 2015 22:30:46 +0200
 
