@@ -1,3 +1,9 @@
+openstack-debian-images (1.5) unstable; urgency=medium
+
+  * Using httpredir.debian.org instead of http.debian.net (Closes: #792362).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 14 Sep 2015 09:55:43 +0000
+
 openstack-debian-images (1.4) unstable; urgency=medium
 
   * Added script to build a murano image in the contrib folder.
