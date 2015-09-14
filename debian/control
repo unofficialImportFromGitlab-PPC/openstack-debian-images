@@ -11,7 +11,6 @@ Vcs-Git: git://anonscm.debian.org/openstack/openstack-debian-images.git
 
 Package: openstack-debian-images
 Architecture: all
-Pre-Depends: dpkg (>= 1.15.6~)
 Depends: debootstrap,
          extlinux,
          initramfs-tools,

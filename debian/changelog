@@ -1,3 +1,9 @@
+openstack-debian-images (1.6) unstable; urgency=medium
+
+  * Added aptitude as installed packages. (Closes: #797962)
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 14 Sep 2015 09:58:29 +0000
+
 openstack-debian-images (1.5) unstable; urgency=medium
 
   * Using httpredir.debian.org instead of http.debian.net (Closes: #792362).
