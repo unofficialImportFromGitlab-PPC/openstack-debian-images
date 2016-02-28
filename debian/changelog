@@ -1,3 +1,9 @@
+openstack-debian-images (1.7) UNRELEASED; urgency=medium
+
+  * Fixed VCS URLs (https).
+
+ -- Ondřej Nový <novy@ondrej.org>  Sun, 28 Feb 2016 15:31:17 +0100
+
 openstack-debian-images (1.6) unstable; urgency=medium
 
   * Added aptitude as installed packages. (Closes: #797962)
