@@ -1,8 +1,14 @@
-openstack-debian-images (1.7) UNRELEASED; urgency=medium
+openstack-debian-images (1.7) unstable; urgency=medium
 
+  [ Ondřej Nový ]
   * Fixed VCS URLs (https).
 
- -- Ondřej Nový <novy@ondrej.org>  Sun, 28 Feb 2016 15:31:17 +0100
+  [ Thomas Goirand ]
+  * Added "biosdevname=0 net.ifnames=0" to the kernel default command line, to
+    avoid eth renaming, which destroys the network. Though this is a temporary
+    hack until we get a more recent cloud-init which handles it.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 20 Apr 2016 14:45:02 +0200
 
 openstack-debian-images (1.6) unstable; urgency=medium
 

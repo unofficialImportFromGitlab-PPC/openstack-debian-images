@@ -391,7 +391,7 @@ echo "default linux
 timeout 1
 label linux
 kernel /vmlinuz
-append initrd=/initrd.img root=/dev/vda1 console=tty0 console=ttyS0,115200 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+append initrd=/initrd.img root=/dev/vda1 biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 extlinux --install ${MOUNT_DIR}/boot/extlinux
 
 ###################
