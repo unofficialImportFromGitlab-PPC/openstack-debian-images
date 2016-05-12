@@ -1,3 +1,12 @@
+openstack-debian-images (1.8) unstable; urgency=medium
+
+  * Adds missing python3-cffi-backend which python3-cryptography seem to need
+    in Stretch (this otherwise fails debootstrap).
+  * Fix console blanking fix in Stretch (ie: /etc/kbd/config doesn't exist
+    anymore).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 12 May 2016 10:29:30 +0200
+
 openstack-debian-images (1.7) unstable; urgency=medium
 
   [ Ondřej Nový ]

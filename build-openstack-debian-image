@@ -168,6 +168,11 @@ else
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,libpam-systemd
 fi
 
+# This is a workaround for python3-cryptography failing to install
+if [ "${RELEASE_NUM}" -ge 9 ] ; then
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},python3-cffi-backend
+fi
+
 if [ ${EXTRA} = "no" ] ; then
 	PKG_LIST=${NEEDED_PACKAGES}
 else
@@ -297,9 +302,15 @@ fi
 # Turn off console blanking which is *very* annoying
 # and increase KEYBOARD_DELAY because it can be annoying
 # over network.
-sed -i s/^BLANK_TIME=.*/BLANK_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
-sed -i s/^POWERDOWN_TIME=.*/POWERDOWN_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
-sed -i 's/^[ \t#]KEYBOARD_DELAY=.*/KEYBOARD_DELAY=1000/' ${MOUNT_DIR}/etc/kbd/config
+# Note: /etc/kbd/config is gone away from Stretch, but
+# we still need to fix it for previous Debian releases.
+# In stretch and beyond, consoleblank=0 in the kernel
+# command line should be enough (TODO: check for that fact).
+if [ -e ${MOUNT_DIR}/etc/kbd/config ] ; then
+	sed -i s/^BLANK_TIME=.*/BLANK_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
+	sed -i s/^POWERDOWN_TIME=.*/POWERDOWN_TIME=0/ ${MOUNT_DIR}/etc/kbd/config
+	sed -i 's/^[ \t#]KEYBOARD_DELAY=.*/KEYBOARD_DELAY=1000/' ${MOUNT_DIR}/etc/kbd/config
+fi
 
 rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
@@ -391,7 +402,7 @@ echo "default linux
 timeout 1
 label linux
 kernel /vmlinuz
-append initrd=/initrd.img root=/dev/vda1 biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+append initrd=/initrd.img root=/dev/vda1 biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 consoleblank=0 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 extlinux --install ${MOUNT_DIR}/boot/extlinux
 
 ###################
