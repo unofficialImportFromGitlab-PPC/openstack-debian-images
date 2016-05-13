@@ -1,3 +1,10 @@
+openstack-debian-images (1.9) UNRELEASED; urgency=medium
+
+  * Merge Azure script into build-openstack-debian-image:
+    - Now using ext4 and not ext3 anymore (Closes: #819761).
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 13 May 2016 14:13:04 +0200
+
 openstack-debian-images (1.8) unstable; urgency=medium
 
   * Adds missing python3-cffi-backend which python3-cryptography seem to need

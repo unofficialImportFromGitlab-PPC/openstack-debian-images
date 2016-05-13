@@ -1,17 +1,26 @@
 #!/bin/sh
+# Copyright:
+#   (c) 2013-2016, Thomas Goirand <zigo@debian.org>
+#   (c) 2015-2016, Bastian Blank
+# License: Apache 2.0, see LICENSE.txt for details.
 
 set -e
+
+if [ "$UNSHARED" != true ] ; then
+	exec env UNSHARED=true unshare --mount --pid --fork --mount-proc "$0" "$@"
+fi
 
 # Parse input parameters
 usage() {
 	echo "Usage: $0 --release|-r <jessie|wheezy> [options]
 Options are:
  --minimal|-m
+ --azure|-az
  --debootstrap-url|-u <debootstrap-mirror> (default: http://httpredir.debian.org/debian)
  --sources.list-mirror|-s <source-list-mirror> (default: http://httpredir.debian.org/debian)
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>
- --image-size|-is <image-size> (default: 2G)
+ --image-size|-is <image-size> (default: 20G)
  --automatic-resize|-ar
  --automatic-resize-space|-ars <suplementary-space> (default: 50M)
  --login|-l <userlogin> (default: debian)
@@ -21,6 +30,7 @@ For more info: man $0"
 }
 
 EXTRA=yes
+AZURE=no
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -43,6 +53,10 @@ for i in $@ ; do
 	;;
 	"--minimal"|"-m")
 		EXTRA=no
+		shift
+	;;
+	"--azure"|"-az")
+		AZURE=yes
 		shift
 	;;
 	"--automatic-resize"|"-ar")
@@ -115,6 +129,14 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--output"|"-o")
+		if [ -z "${2}" ] ; then
+			echo "No output file specified"
+		fi
+		OUTPUT=${2}
+		shift
+		shift
+	;;
 	*)
 	;;
 	esac
@@ -149,7 +171,7 @@ if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
 	SOURCE_LIST_MIRROR=http://httpredir.debian.org/debian
 fi
 if [ -z "${IMAGE_SIZE}" ] ; then
-	IMAGE_SIZE=2
+	IMAGE_SIZE=20
 fi
 if [ -z "${AUTOMATIC_RESIZE_SPACE}" ] ; then
 	AUTOMATIC_RESIZE_SPACE=50
@@ -157,15 +179,18 @@ fi
 if [ -z "${USER_LOGIN}" ] ; then
 	USER_LOGIN=debian
 fi
+if [ -z "${OUTPUT}" ] ; then
+	OUTPUT=debian-${RELEASE}-$(TZ=UTC date '+%Y%m%d%H%M')-amd64
+fi
 
-NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,linux-image-amd64,euca2ools,file,kbd,aptitude
+NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,euca2ools,file,kbd,aptitude,file
 if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
 	# apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp,unscd
 else
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,libpam-systemd
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,libpam-systemd,ntp,unscd
 fi
 
 # This is a workaround for python3-cryptography failing to install
@@ -183,9 +208,9 @@ if ! [ `whoami` = "root" ] ; then
 	exit 1
 fi
 FILE_NAME=debian-${RELEASE}-${RELEASE_NUM}.0.0-1-amd64
-AMI_NAME=${FILE_NAME}.raw
-QCOW2_NAME=${FILE_NAME}.qcow2
-rm -f ${AMI_NAME}
+RAW_NAME=${OUTPUT}.raw
+QCOW2_NAME=${OUTPUT}.qcow2
+rm -f ${RAW_NAME}
 
 set -x
 
@@ -193,19 +218,19 @@ set -x
 ### Prepare the HDD (format, ext.) ###
 ######################################
 PARTED=/sbin/parted
-rm -f $AMI_NAME
-qemu-img create ${AMI_NAME} ${IMAGE_SIZE}G
-#dd if=/dev/null bs=1M seek=1024 of=${AMI_NAME}
+rm -f $RAW_NAME
+qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
 
-${PARTED} -s ${AMI_NAME} mktable msdos
-${PARTED} -s -a optimal ${AMI_NAME} mkpart primary ext3 1Mi 100%
-${PARTED} -s ${AMI_NAME} set 1 boot on
-install-mbr ${AMI_NAME}
-RESULT_KPARTX=`kpartx -asv ${AMI_NAME} 2>&1`
+${PARTED} -s ${RAW_NAME} mktable msdos
+${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
+${PARTED} -s ${RAW_NAME} set 1 boot on
+install-mbr ${RAW_NAME}
+RESULT_KPARTX=`kpartx -asv ${RAW_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-	LOOP_DEVICE=`echo ${RESULT_KPARTX} | cut -d" " -f3`
-	echo "kpartx mounted using: ${LOOP_DEVICE}"
+	LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+	LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+	echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
 else
 	echo "It seems kpartx didn't mount the image correctly: exiting."
 	exit 1
@@ -214,25 +239,35 @@ fi
 cleanup(){
 	error=$?
 	[ ! -d "${MOUNT_DIR}" ] && return
-	echo
-	echo "error $error, umounting $MOUNT_DIR"
+	if [ "$error" -gt 0 ]; then
+		echo
+		echo "Error $error"
+	else
+		echo "Finished."
+	fi
+
+	set +e
+
+	sync
 	chroot ${MOUNT_DIR} umount /proc || true
 	chroot ${MOUNT_DIR} umount /sys || true
-	umount ${MOUNT_DIR}
+	umount -l ${MOUNT_DIR}
 	rmdir ${MOUNT_DIR}
-	kpartx -d ${AMI_NAME}
+
+	dmsetup remove --deferred ${LOOP_DEVICE}
+	losetup -d /dev/${LOOPRAW_DEVICE}
 	exit $error
 }
 trap "cleanup" EXIT TERM INT
 
-# We first use ext2, THEN convert to ext3, because that's so much faster this way.
-mkfs.ext2 /dev/mapper/${LOOP_DEVICE}
+mkfs.ext4 /dev/mapper/${LOOP_DEVICE}
+UUID=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE})
 
 # No fsck because of X days without checks
 tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
 
 MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
-mount -o loop /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
+mount /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
 debootstrap --verbose \
 	--include=${PKG_LIST} \
 	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
@@ -250,6 +285,10 @@ fi
 # Otherwise, we have a huge backdoor, since the root password
 # is always the same.
 sed -i "s/PermitRootLogin yes/PermitRootLogin without-password/" ${MOUNT_DIR}/etc/ssh/sshd_config
+cat >>${MOUNT_DIR}/etc/ssh/sshd_config <<EOF
+
+ClientAliveInterval 120
+EOF
 
 # Add a default user which is used by cloud-init by default
 chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
@@ -264,18 +303,12 @@ chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 # # # # # # # # # # # # # # #
 # Setup fstab
 echo "# /etc/fstab: static file system information.
-proc	/proc	proc	nodev,noexec,nosuid	0	0
-/dev/vda1	/	ext3	errors=remount-ro	0	1
+UUID=${UUID}	/	ext4	errors=remount-ro	0	1
 " > ${MOUNT_DIR}/etc/fstab
 chroot ${MOUNT_DIR} mount /proc || true
 
 echo "# disable pc speaker
 blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
-
-#echo "# Required for cinder hotplug
-#acpiphp
-#pci_hotplug
-#" >>${MOUNT_DIR}/etc/modules
 
 # Enable bash-completion by default
 if [ ${EXTRA} = "yes" ] ; then
@@ -287,17 +320,19 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi" >>${MOUNT_DIR}/etc/bash.bashrc
-
-	# No clear for the tty1 console
-	if [ "${RELEASE}" = "wheezy" ] ; then
-		sed -i "s#1:2345:respawn:/sbin/getty 38400 tty1#1:2345:respawn:/sbin/getty --noclear 38400 tty1#" ${MOUNT_DIR}/etc/inittab
-	else
-		echo ForwardToConsole=yes >> ${MOUNT_DIR}/etc/systemd/journald.conf
-	fi
-
-
-	chroot ${MOUNT_DIR} apt-get install -y locales-all
 fi
+
+# No clear for the tty1 console
+if [ "${RELEASE}" = "wheezy" ] ; then
+	sed -i "s#1:2345:respawn:/sbin/getty 38400 tty1#1:2345:respawn:/sbin/getty --noclear 38400 tty1#" ${MOUNT_DIR}/etc/inittab
+else
+	# XXX: the serial port on Microsoft Azure plattform can't cope with
+	# lots of data, keep this option disabled.
+	#echo ForwardToConsole=yes >> ${MOUNT_DIR}/etc/systemd/journald.conf
+	:
+fi
+
+chroot ${MOUNT_DIR} apt-get install -y locales-all
 
 # Turn off console blanking which is *very* annoying
 # and increase KEYBOARD_DELAY because it can be annoying
@@ -337,6 +372,9 @@ allow-hotplug eth2
 iface eth2 inet dhcp
 " > ${MOUNT_DIR}/etc/network/interfaces
 
+# FIXME: DHCP RFC3442 is used incorrect in Azure
+sed -ie 's,rfc3442-classless-static-routes,disabled-\0,' $BODI_CHROOT_PATH/etc/dhcp/dhclient.conf
+
 # Setup the default hostname (will be set by cloud-init
 # at boot time anyway)
 echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
@@ -359,18 +397,67 @@ deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
+if [ "${RELEASE}" = "jessie" ] && [ "${AZURE}" = "yes" ] ; then
+	echo "deb ${SOURCE_LIST_MIRROR} jessie-backports main
+deb-src ${SOURCE_LIST_MIRROR} jessie-backports main
+deb ${SOURCE_LIST_MIRROR}-azure jessie-backports main
+deb-src ${SOURCE_LIST_MIRROR}-azure jessie-backports main
+" >>${MOUNT_DIR}/etc/apt/sources.list
+fi
+
+if [ "${AZURE}" = "yes" ] ; then
+	chroot ${MOUNT_DIR} apt-key add - <<EOF
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1
+
+mQENBFYWcbkBCADKvo4KT/ic3wb4AoNFtWvoS1Ae3NFcvM/6WR/n9BTsayOlnjDu
+EFh7yH16nIhuO5pZFocY+32BWMEmiK6/0pkk1lB9+XfNB8yqDCJ/ItzADfuKQv6g
+smfx4tLa1Vj+jUbrgiIG7MYTCPlpkSuPA+FgntlR4JBxOy2g4fqqp3of+xM8tfSN
+4I7/g1989YU9EQN53c1HGLdsc5x5Y5Kezd46H4IK5oyri7BaG4zRzpJLYa4yxB2W
+re+HXP0a5SN/zQq1oq8pvkPubEBPKhdypZzzoHWPkZqXh1pHsMMNRkwsLW/3iwzE
+IjDKrbdILz3/b+iLLIvYo9RlTycRO0XeS/B3ABEBAAG0UkRlYmlhbiBmb3IgQXp1
+cmUgQXJjaGl2ZSBBdXRvbWF0aWMgU2lnbmluZyBLZXkgKDgvamVzc2llKSA8bWlj
+cm9zb2Z0QGNyZWRhdGl2LmNvbT6JAT4EEwECACgFAlYWcbkCGwMFCQPCZwAGCwkI
+BwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEAbqSemobK1/2c8H/1j4HK/izt7aw7Kk
+g+ChRDhltb4LiYTZNgHaBnLGkKewkA1vYIHQjdu/pVnJjh1JzvOBFV+rhJ4Cc60D
+s4JDqkrl8LpA4jsLb/PW1bRtbW92mPfhWgjyWs6S2tRBsBy1m2+SLZKeaDUq/PCD
+VnaClzDh2fQYimI8IQk5U/u8VHXtDm3qYQSq7dJMTTnDcBC1oCjEYN+uPm9M+tUI
+ik2hIE4VmjIXYTQVTa1lD+qyJvZ9hCsBUxAGllFpcWlyexN5orer6c+30XY/0Y4i
+Q+zzVPrp1s6MgM9F8ofgd2+MhL57fwyj2A+Tbyzm7xYhzPPMx/mopo4pi884+5lo
+FY6A20E=
+=X0jG
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+fi
+
 chroot ${MOUNT_DIR} apt-get update
+if [ "${AZURE}" = "yes" ] ; then
+	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring
+	chroot ${MOUNT_DIR} apt-get update
+fi
 chroot ${MOUNT_DIR} apt-get upgrade -y
 
 # Setup cloud-init, cloud-utils and cloud-initramfs-growroot
 # These are only available from backports in Wheezy
 if [ "${RELEASE}" = "wheezy" ] ; then
 	chroot ${MOUNT_DIR} apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
+	cat > ${MOUNT_DIR}/etc/apt/preferences.d/linux.pref <<EOF
+Package: linux-image-amd64 initramfs-tools
+Pin: release n=wheezy-backports
+Pin-Priority: 500
+EOF
 fi
 
-# For OpenStack, we would like to use Ec2 and no other API
-echo "# to update this file, run dpkg-reconfigure cloud-init
-datasource_list: [ConfigDrive, Openstack, Ec2]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+chroot ${MOUNT_DIR} apt-get install -y linux-image-amd64
+
+if [ "${AZURE}" = "yes" ] ; then
+	echo "# to update this file, run dpkg-reconfigure cloud-init
+datasource_list: [Azure]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+else
+	# For OpenStack, we would like to use Ec2 and no other API
+	echo "# to update this file, run dpkg-reconfigure cloud-init
+	datasource_list: [ConfigDrive, Openstack, Ec2]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+fi
 
 # Needed to have automatic mounts of /dev/vdb
 echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
@@ -378,6 +465,11 @@ echo "manage_etc_hosts: true" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
 
 # Set the cloud init default user (required for the keypair to be put in the right home directory)
 sed -i "s/name: debian/name: ${USER_LOGIN}/" ${MOUNT_DIR}/etc/cloud/cloud.cfg
+
+if [ "${AZURE}" = "yes" ] ; then
+	unshare --pid --fork --mount-proc chroot ${MOUNT_DIR} apt-get install -y waagent
+	rm -f ${MOUNT_DIR}/var/log/waagent.log
+fi
 
 # Setting-up initramfs
 chroot ${MOUNT_DIR} update-initramfs -u
@@ -387,8 +479,8 @@ rm ${MOUNT_DIR}/var/cache/apt/archives/*.deb
 # Set console for emergency and rescue shells
 SYSTEMD_DIR="${MOUNT_DIR}/etc/systemd/system/"
 for service in emergency.service rescue.service ; do
-    mkdir "${SYSTEMD_DIR}/${service}.d"
-    echo '[Service]
+	mkdir "${SYSTEMD_DIR}/${service}.d"
+	echo '[Service]
 ExecStart=
 ExecStart=-/bin/sh -c "/sbin/sulogin /dev/tty0; /bin/systemctl --fail --no-block default"' > "${SYSTEMD_DIR}/${service}.d/console.conf"
 done
@@ -396,13 +488,15 @@ done
 ###########################
 ### Setting-up extlinux ###
 ###########################
-UUID=`blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE}`
 mkdir -p ${MOUNT_DIR}/boot/extlinux 
+if [ "${RELEASE}" = "wheezy" ] ; then
+	append="rootdelay=30"
+fi
 echo "default linux
 timeout 1
 label linux
 kernel /vmlinuz
-append initrd=/initrd.img root=/dev/vda1 biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 consoleblank=0 ro" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+append initrd=/initrd.img root=UUID=${UUID} biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0 ro $append" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 extlinux --install ${MOUNT_DIR}/boot/extlinux
 
 ###################
@@ -425,10 +519,11 @@ cleanup(){
 
 sync
 chroot ${MOUNT_DIR} umount /proc || true
+chroot ${MOUNT_DIR} umount /sys || true
 umount ${MOUNT_DIR}
+
 # Run FSCK so that resize can work
-tune2fs -j /dev/mapper/${LOOP_DEVICE}
-fsck.ext3 -f /dev/mapper/${LOOP_DEVICE} || true
+fsck.ext4 -f /dev/mapper/${LOOP_DEVICE} || true
 
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	resize2fs -M /dev/mapper/${LOOP_DEVICE}
@@ -441,18 +536,18 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 fi
 
 sync
-kpartx -d ${AMI_NAME}
+kpartx -d ${RAW_NAME}
 rmdir ${MOUNT_DIR}
 
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	# Rebuild a smaller partition table
-	parted -s ${AMI_NAME} rm 1
-	parted -s ${AMI_NAME} mkpart primary ext3 1Mi ${FINAL_IMG_SIZE}Mi
-	parted -s ${AMI_NAME} set 1 boot on
+	parted -s ${RAW_NAME} rm 1
+	parted -s ${RAW_NAME} mkpart primary ext4 1Mi ${FINAL_IMG_SIZE}Mi
+	parted -s ${RAW_NAME} set 1 boot on
 
 	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
-	truncate -s `expr 3 + ${FINAL_IMG_SIZE}`M ${AMI_NAME}
-	install-mbr ${AMI_NAME}
+	truncate -s `expr 3 + ${FINAL_IMG_SIZE}`M ${RAW_NAME}
+	install-mbr ${RAW_NAME}
 fi
 
 QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
@@ -462,4 +557,4 @@ else
 	OTHER_QEMU_IMG_OPTIONS=""
 fi
 
-qemu-img convert -c -f raw ${AMI_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
+qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
