@@ -2,6 +2,7 @@ openstack-debian-images (1.9) UNRELEASED; urgency=medium
 
   * Merge Azure script into build-openstack-debian-image:
     - Now using ext4 and not ext3 anymore (Closes: #819761).
+  * Added an explicite LICENSE.txt Apache-2.0 file.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 13 May 2016 14:13:04 +0200
 
