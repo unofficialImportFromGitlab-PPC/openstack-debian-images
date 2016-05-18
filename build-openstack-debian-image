@@ -20,7 +20,7 @@ Options are:
  --sources.list-mirror|-s <source-list-mirror> (default: http://httpredir.debian.org/debian)
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>
- --image-size|-is <image-size> (default: 20G)
+ --image-size|-is <image-size> (default: 2G)
  --automatic-resize|-ar
  --automatic-resize-space|-ars <suplementary-space> (default: 50M)
  --login|-l <userlogin> (default: debian)
@@ -171,7 +171,7 @@ if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
 	SOURCE_LIST_MIRROR=http://httpredir.debian.org/debian
 fi
 if [ -z "${IMAGE_SIZE}" ] ; then
-	IMAGE_SIZE=20
+	IMAGE_SIZE=2
 fi
 if [ -z "${AUTOMATIC_RESIZE_SPACE}" ] ; then
 	AUTOMATIC_RESIZE_SPACE=50
@@ -550,11 +550,13 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	install-mbr ${RAW_NAME}
 fi
 
-QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
-if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
-	OTHER_QEMU_IMG_OPTIONS=" -o compat=0.10"
-else
-	OTHER_QEMU_IMG_OPTIONS=""
-fi
+if ! [ "${AZURE}" = "yes" ] ; then
+	QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
+	if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
+		OTHER_QEMU_IMG_OPTIONS=" -o compat=0.10"
+	else
+		OTHER_QEMU_IMG_OPTIONS=""
+	fi
 
-qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
+	qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
+fi
