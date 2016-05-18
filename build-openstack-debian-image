@@ -16,6 +16,7 @@ usage() {
 Options are:
  --minimal|-m
  --azure|-az
+ --boot-manager|-bm <grub|syslinux> (default: grub)
  --debootstrap-url|-u <debootstrap-mirror> (default: http://httpredir.debian.org/debian)
  --sources.list-mirror|-s <source-list-mirror> (default: http://httpredir.debian.org/debian)
  --extra-packages|-e <package>,<package>,...
@@ -31,6 +32,7 @@ For more info: man $0"
 
 EXTRA=yes
 AZURE=no
+BOOTMANAGER=grub
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -57,6 +59,15 @@ for i in $@ ; do
 	;;
 	"--azure"|"-az")
 		AZURE=yes
+		shift
+	;;
+	"--boot-manager"|"-bm")
+		if [ "${2}" != "grub" ] && [ "${2}" != "syslinux" ] ; then
+			echo "No recognized parameter defining the boot manager"
+			usage
+		fi
+		BOOTMANAGER=${2}
+		shift
 		shift
 	;;
 	"--automatic-resize"|"-ar")
@@ -183,7 +194,13 @@ if [ -z "${OUTPUT}" ] ; then
 	OUTPUT=debian-${RELEASE}-$(TZ=UTC date '+%Y%m%d%H%M')-amd64
 fi
 
-NEEDED_PACKAGES=sudo,adduser,locales,extlinux,openssh-server,euca2ools,file,kbd,aptitude,file
+if [ "${BOOTMANAGER}" = "grub" ] ; then
+	BOOT_MGR_PKG="grub-pc"
+else
+	BOOT_MGR_PKG="extlinux"
+fi
+
+NEEDED_PACKAGES=sudo,adduser,locales,${BOOT_MGR_PKG},openssh-server,euca2ools,file,kbd,aptitude,file
 if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
@@ -251,11 +268,11 @@ cleanup(){
 	sync
 	chroot ${MOUNT_DIR} umount /proc || true
 	chroot ${MOUNT_DIR} umount /sys || true
+	chroot ${MOUNT_DIR} umount /dev || true
 	umount -l ${MOUNT_DIR}
 	rmdir ${MOUNT_DIR}
 
-	dmsetup remove --deferred ${LOOP_DEVICE}
-	losetup -d /dev/${LOOPRAW_DEVICE}
+	kpartx -d ${RAW_NAME}
 	exit $error
 }
 trap "cleanup" EXIT TERM INT
@@ -267,10 +284,14 @@ UUID=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE})
 tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
 
 MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
+
 mount /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
+
 debootstrap --verbose \
 	--include=${PKG_LIST} \
 	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
+
+
 
 ############################
 ### Customize the distro ###
@@ -485,19 +506,38 @@ ExecStart=
 ExecStart=-/bin/sh -c "/sbin/sulogin /dev/tty0; /bin/systemctl --fail --no-block default"' > "${SYSTEMD_DIR}/${service}.d/console.conf"
 done
 
-###########################
-### Setting-up extlinux ###
-###########################
+###################################
+### Setting-up extlinux or grub ###
+###################################
 mkdir -p ${MOUNT_DIR}/boot/extlinux 
 if [ "${RELEASE}" = "wheezy" ] ; then
 	append="rootdelay=30"
 fi
-echo "default linux
+KERNEL_PARAMS="biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0 systemd.show_status=true $append"
+if [ "${BOOTMANAGER}" = "grub" ] ; then
+	sed -i -e 's|^[ #\t]*GRUB_CMDLINE_LINUX_DEFAULT[ #\t]*=.*|GRUB_CMDLINE_LINUX_DEFAULT="'"${KERNEL_PARAMS}"'"|' ${MOUNT_DIR}/etc/default/grub
+	echo "
+# openstack-debian-images disables OS prober to avoid
+# loopback detection which breaks booting
+GRUB_DISABLE_OS_PROBER=true" >>${MOUNT_DIR}/etc/default/grub
+	# Tell grub about our loopback devices first
+	mkdir -p ${MOUNT_DIR}/boot/grub
+	mount --bind /dev ${MOUNT_DIR}/dev
+	mount --bind /proc ${MOUNT_DIR}/proc
+	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
+	# Run grub from the host, pointing to the guest installation
+	grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map --root-directory=${MOUNT_DIR} /dev/${LOOPRAW_DEVICE}
+	umount ${MOUNT_DIR}/dev
+	umount ${MOUNT_DIR}/proc
+else
+	KERNEL_PARAMS="initrd=/initrd.img root=UUID=${UUID} ${KERNEL_PARAMS} ro"
+	echo "default linux
 timeout 1
 label linux
 kernel /vmlinuz
-append initrd=/initrd.img root=UUID=${UUID} biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0 ro $append" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
-extlinux --install ${MOUNT_DIR}/boot/extlinux
+append ${KERNEL_PARAMS}" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
+	extlinux --install ${MOUNT_DIR}/boot/extlinux
+fi
 
 ###################
 ### HOOK SCRIPT ###

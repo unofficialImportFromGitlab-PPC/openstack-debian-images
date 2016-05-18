@@ -1,3 +1,9 @@
+openstack-debian-images (1.10) UNRELEASED; urgency=medium
+
+  * Add grub support, and make it default over syslinux (Closes: #816196).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 18 May 2016 15:54:59 +0200
+
 openstack-debian-images (1.9) unstable; urgency=medium
 
   * Merge Azure script into build-openstack-debian-image:

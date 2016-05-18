@@ -12,6 +12,7 @@ Package: openstack-debian-images
 Architecture: all
 Depends: debootstrap,
          extlinux,
+         grub-pc,
          initramfs-tools,
          kpartx,
          mbr,
