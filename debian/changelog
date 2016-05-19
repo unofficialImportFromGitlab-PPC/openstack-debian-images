@@ -1,4 +1,4 @@
-openstack-debian-images (1.10) UNRELEASED; urgency=medium
+openstack-debian-images (1.10) unstable; urgency=medium
 
   * Add grub support, and make it default over syslinux (Closes: #816196).
   * Add "source /etc/network/interfaces.d/*" in interfaces (Closes: #820120).
