@@ -376,6 +376,8 @@ rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 echo "# This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
 
+source /etc/network/interfaces.d/*
+
 # The loopback network interface
 auto lo
 iface lo inet loopback
