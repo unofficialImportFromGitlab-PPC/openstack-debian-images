@@ -1,3 +1,10 @@
+openstack-debian-images (1.11) unstable; urgency=medium
+
+  * Do not use grub-pc from the host, and remove matching Depends: of grub-pc
+    (Closes: #825888).
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 31 May 2016 08:29:56 +0000
+
 openstack-debian-images (1.10) unstable; urgency=medium
 
   * Add grub support, and make it default over syslinux (Closes: #816196).
