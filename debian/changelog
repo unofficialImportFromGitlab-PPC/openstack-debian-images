@@ -2,6 +2,7 @@ openstack-debian-images (1.11) unstable; urgency=medium
 
   * Do not use grub-pc from the host, and remove matching Depends: of grub-pc
     (Closes: #825888).
+  * Document the boot manager option in the man page.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 31 May 2016 08:29:56 +0000
 

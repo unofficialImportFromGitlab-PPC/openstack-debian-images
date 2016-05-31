@@ -69,6 +69,14 @@ of the Debian mirror to use to perform the debootstrap. For example:
 .I http://ftp.fr.debian.org/debian
 
 .LP
+.B \-\-boot-manager|\-bm
+.I <grub|syslinux>
+.IP
+
+Select what type of boot manager to use inside the image. The default is
+Grub, but you can as well decide to use syslinux if you prefer.
+
+.LP
 .B \-\-sources.list\-mirror|\-s
 .I <source\-list\-mirror>
 .IP
