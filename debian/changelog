@@ -1,3 +1,9 @@
+openstack-debian-images (1.12) unstable; urgency=medium
+
+  * Fixed malformed 90_dpkg.cfg yaml (Closes: #826561).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 08 Jun 2016 11:15:43 +0200
+
 openstack-debian-images (1.11) unstable; urgency=medium
 
   * Do not use grub-pc from the host, and remove matching Depends: of grub-pc
