@@ -1,3 +1,9 @@
+openstack-debian-images (1.13) unstable; urgency=medium
+
+  * Add NoCloud as possible datasource. (Closes: #826954)
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 16 Jun 2016 11:25:57 +0200
+
 openstack-debian-images (1.12) unstable; urgency=medium
 
   * Fixed malformed 90_dpkg.cfg yaml (Closes: #826561).
