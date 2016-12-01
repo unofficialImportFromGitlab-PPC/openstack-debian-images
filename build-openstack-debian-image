@@ -241,7 +241,7 @@ qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
 ${PARTED} -s ${RAW_NAME} mktable msdos
 ${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
 ${PARTED} -s ${RAW_NAME} set 1 boot on
-install-mbr ${RAW_NAME}
+install-mbr --force ${RAW_NAME}
 RESULT_KPARTX=`kpartx -asv ${RAW_NAME} 2>&1`
 
 if echo "${RESULT_KPARTX}" | grep "^add map" ; then
