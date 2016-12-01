@@ -1,3 +1,10 @@
+openstack-debian-images (1.14) unstable; urgency=medium
+
+  * Do not install libpam-systemd at the debootstrap phase, sa this pulls
+    both systemd-sysv and systemd-shim which are failing the bootstrap.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 01 Dec 2016 09:44:06 +0000
+
 openstack-debian-images (1.13) unstable; urgency=medium
 
   * Add NoCloud as possible datasource. (Closes: #826954)

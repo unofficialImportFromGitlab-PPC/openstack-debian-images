@@ -207,7 +207,7 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 	# apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp,unscd
 else
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,libpam-systemd,ntp,unscd
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,ntp,unscd
 fi
 
 # This is a workaround for python3-cryptography failing to install
@@ -292,7 +292,6 @@ debootstrap --verbose \
 	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
 
 
-
 ############################
 ### Customize the distro ###
 ############################
@@ -353,7 +352,9 @@ else
 	:
 fi
 
-chroot ${MOUNT_DIR} apt-get install -y locales-all
+# We do it *after* the debootstrap, as otherwise it fails with
+# systemd-shim conflicting with systemd-sysv.
+chroot ${MOUNT_DIR} apt-get install -y locales-all libpam-systemd
 
 # Turn off console blanking which is *very* annoying
 # and increase KEYBOARD_DELAY because it can be annoying
