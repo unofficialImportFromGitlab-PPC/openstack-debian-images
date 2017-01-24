@@ -102,7 +102,7 @@ architecture-specific components. Supported options are "amd64" and
 .IP
 
 URL to use when building the sources.list inside the chroot. If this
-option is ommited, then the global httpredir.debian.org redirector is used.
+option is omitted, then the global httpredir.debian.org redirector is used.
 For example, you can use:
 .I http://ftp.fr.debian.org/debian
 
@@ -129,7 +129,7 @@ be ignored.
 .I <image\-size>
 .IP
 
-Select the image size (default to 2 GBytes if this option is ommited). Only
+Select the image size (default to 2 GBytes if this option is omitted). Only
 useful if you need to use a custom script hook (see below).
 
 .LP
@@ -144,11 +144,11 @@ time, it is disabled by default.
 
 .LP
 .B \-\-automatic\-resize\-space|\-ars
-.I <suplementary-space>
+.I <supplementary-space>
 .IP
 
-Size of the suplementary space added to the partition after it is resized
-to the minimum. If this option is ommited, then 50G is used. If
+Size of the supplementary space added to the partition after it is resized
+to the minimum. If this option is omitted, then 50G is used. If
 .B \-\-automatic-resize
 isn't used, then it is useless to set this option, which will be ignored.
 
