@@ -11,12 +11,13 @@ Vcs-Git: https://anonscm.debian.org/git/openstack/openstack-debian-images.git
 Package: openstack-debian-images
 Architecture: all
 Depends: debootstrap,
-         extlinux,
+         extlinux [amd64 i386],
+         mbr [amd64 i386],
          initramfs-tools,
          kpartx,
-         mbr,
          parted,
          qemu-utils,
+	 dosfstools
          ${misc:Depends}
 Description: script to build a Debian image for OpenStack
  This package contains a script which is helpful for creating images to be used

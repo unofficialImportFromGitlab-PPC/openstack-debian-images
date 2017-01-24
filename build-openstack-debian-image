@@ -10,6 +10,9 @@ if [ "$UNSHARED" != true ] ; then
 	exec env UNSHARED=true unshare --mount --pid --fork --mount-proc "$0" "$@"
 fi
 
+LC_ALL=C
+export LC_ALL
+
 # Parse input parameters
 usage() {
 	echo "Usage: $0 --release|-r <jessie|wheezy> [options]
@@ -26,6 +29,8 @@ Options are:
  --automatic-resize-space|-ars <suplementary-space> (default: 50M)
  --login|-l <userlogin> (default: debian)
  --password|-p <root-password> (dangerous option: avoid it if possible)
+ --boot-type|-bt <boot type> (default: mbr)
+ --architecture|-a <architecture> (default: amd64)
 For more info: man $0"
 	exit 1
 }
@@ -33,6 +38,8 @@ For more info: man $0"
 EXTRA=yes
 AZURE=no
 BOOTMANAGER=grub
+BOOTTYPE=mbr
+ARCH=amd64
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -67,6 +74,24 @@ for i in $@ ; do
 			usage
 		fi
 		BOOTMANAGER=${2}
+		shift
+		shift
+	;;
+	"--boot-type"|"-bt")
+		if [ "${2}" != "mbr" ] && [ "${2}" != "uefi" ] ; then
+			echo "No recognized parameter defining the boot type"
+			usage
+		fi
+		BOOTTYPE=${2}
+		shift
+		shift
+	;;
+	"--architecture"|"-a")
+		if [ "${2}" != "amd64" ] && [ "${2}" != "arm64" ] ; then
+			echo "No recognized parameter defining the architecture (currently support amd64 and arm64)"
+			usage
+		fi
+		ARCH=${2}
 		shift
 		shift
 	;;
@@ -191,11 +216,32 @@ if [ -z "${USER_LOGIN}" ] ; then
 	USER_LOGIN=debian
 fi
 if [ -z "${OUTPUT}" ] ; then
-	OUTPUT=debian-${RELEASE}-$(TZ=UTC date '+%Y%m%d%H%M')-amd64
+	OUTPUT=debian-${RELEASE}-$(TZ=UTC date '+%Y%m%d%H%M')-${ARCH}
+fi
+
+if [ "${BOOTTYPE}" = "uefi" ] && [ "${BOOTMANAGER}" != "grub" ] ; then
+	echo "uefi boot type is only compatible with grub"
+	usage
+fi
+
+if [ "${ARCH}" = "arm64" ] ; then
+	if [ "${BOOTMANAGER}" != "grub" ] || [ "${BOOTTYPE}" != "uefi" ] ; then
+		echo "arm64 depends on using grub and uefi"
+		usage
+	fi
+fi
+
+CONSOLE=ttyS0
+if [ "${ARCH}" = "arm64" ] ; then
+	CONSOLE=ttyAMA0
 fi
 
 if [ "${BOOTMANAGER}" = "grub" ] ; then
-	BOOT_MGR_PKG="grub-pc"
+	if [ "${BOOTTYPE}" = "uefi" ] ; then
+		BOOT_MGR_PKG="grub-efi-${ARCH}"
+	else
+		BOOT_MGR_PKG="grub-pc"
+	fi
 else
 	BOOT_MGR_PKG="extlinux"
 fi
@@ -224,7 +270,7 @@ if ! [ `whoami` = "root" ] ; then
 	echo "You have to be root to run this script"
 	exit 1
 fi
-FILE_NAME=debian-${RELEASE}-${RELEASE_NUM}.0.0-1-amd64
+FILE_NAME=debian-${RELEASE}-${RELEASE_NUM}.0.0-1-${ARCH}
 RAW_NAME=${OUTPUT}.raw
 QCOW2_NAME=${OUTPUT}.qcow2
 rm -f ${RAW_NAME}
@@ -238,19 +284,35 @@ PARTED=/sbin/parted
 rm -f $RAW_NAME
 qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
 
-${PARTED} -s ${RAW_NAME} mktable msdos
-${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
-${PARTED} -s ${RAW_NAME} set 1 boot on
-install-mbr --force ${RAW_NAME}
-RESULT_KPARTX=`kpartx -asv ${RAW_NAME} 2>&1`
-
-if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-	LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
-	LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
-	echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
-else
-	echo "It seems kpartx didn't mount the image correctly: exiting."
-	exit 1
+if [ "${BOOTTYPE}" = "mbr" ] ; then
+	${PARTED} -s ${RAW_NAME} mktable msdos
+	${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
+	${PARTED} -s ${RAW_NAME} set 1 boot on
+	install-mbr --force ${RAW_NAME}
+	RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1)
+	if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+		LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+		LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+		echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+	else
+		echo "It seems kpartx didn't mount the image correctly: exiting."
+		exit 1
+	fi
+else # uefi
+	${PARTED} -s ${RAW_NAME} mktable gpt
+	${PARTED} -s -a optimal ${RAW_NAME} mkpart ESP fat32 1Mi 101Mi
+	${PARTED} -s -a optimal ${RAW_NAME} -- mkpart ROOT ext4 102Mi -64s
+	${PARTED} -s ${RAW_NAME} set 1 esp on
+	RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1 | tail -1)
+	if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+		LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+		LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+		echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+	else
+		echo "It seems kpartx didn't mount the image correctly: exiting."
+		exit 1
+	fi
+	LOOP_DEVICE_ESP=$(kpartx -asv ${RAW_NAME} 2>&1 | head -1 | cut -d" " -f3)
 fi
 
 cleanup(){
@@ -286,6 +348,12 @@ tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
 MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
 
 mount /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
+if [ "${BOOTTYPE}" = "uefi" ] ; then
+	mkfs.vfat /dev/mapper/${LOOP_DEVICE_ESP}
+	UUID_ESP=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE_ESP})
+	mkdir -p ${MOUNT_DIR}/boot/efi
+	mount /dev/mapper/${LOOP_DEVICE_ESP} ${MOUNT_DIR}/boot/efi
+fi
 
 debootstrap --verbose \
 	--include=${PKG_LIST} \
@@ -325,7 +393,10 @@ chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
 echo "# /etc/fstab: static file system information.
 UUID=${UUID}	/	ext4	errors=remount-ro	0	1
 " > ${MOUNT_DIR}/etc/fstab
-chroot ${MOUNT_DIR} mount /proc || true
+if [ "${BOOTTYPE}" = "uefi" ] ; then
+	echo "UUID=${UUID_ESP}	/boot/efi	vfat	errors=remount-ro	0	0" >> ${MOUNT_DIR}/etc/fstab
+fi
+mount -t proc proc ${MOUNT_DIR}/proc
 
 echo "# disable pc speaker
 blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
@@ -466,13 +537,13 @@ chroot ${MOUNT_DIR} apt-get upgrade -y
 if [ "${RELEASE}" = "wheezy" ] ; then
 	chroot ${MOUNT_DIR} apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
 	cat > ${MOUNT_DIR}/etc/apt/preferences.d/linux.pref <<EOF
-Package: linux-image-amd64 initramfs-tools
+Package: linux-image-${ARCH} initramfs-tools
 Pin: release n=wheezy-backports
 Pin-Priority: 500
 EOF
 fi
 
-chroot ${MOUNT_DIR} apt-get install -y linux-image-amd64
+chroot ${MOUNT_DIR} apt-get install -y linux-image-${ARCH}
 
 if [ "${AZURE}" = "yes" ] ; then
 	echo "# to update this file, run dpkg-reconfigure cloud-init
@@ -516,7 +587,7 @@ mkdir -p ${MOUNT_DIR}/boot/extlinux
 if [ "${RELEASE}" = "wheezy" ] ; then
 	append="rootdelay=30"
 fi
-KERNEL_PARAMS="biosdevname=0 net.ifnames=0 console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0 systemd.show_status=true $append"
+KERNEL_PARAMS="biosdevname=0 net.ifnames=0 console=tty0 console=$CONSOLE,115200 earlyprintk=$CONSOLE,115200 consoleblank=0 systemd.show_status=true $append"
 if [ "${BOOTMANAGER}" = "grub" ] ; then
 	sed -i -e 's|^[ #\t]*GRUB_CMDLINE_LINUX_DEFAULT[ #\t]*=.*|GRUB_CMDLINE_LINUX_DEFAULT="'"${KERNEL_PARAMS}"'"|' ${MOUNT_DIR}/etc/default/grub
 	echo "
@@ -528,9 +599,10 @@ GRUB_DISABLE_OS_PROBER=true" >>${MOUNT_DIR}/etc/default/grub
 	mount --bind /dev ${MOUNT_DIR}/dev
 	mount --bind /proc ${MOUNT_DIR}/proc
 	mount --bind /sys ${MOUNT_DIR}/sys
+	echo "grub-efi-${ARCH} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
 	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
 	# Run grub from the chroot, pointing to the bind mounted /dev device.
-	chroot ${MOUNT_DIR} grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=/boot/grub/device.map /dev/${LOOPRAW_DEVICE}
+	chroot ${MOUNT_DIR} grub-install --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map /dev/${LOOPRAW_DEVICE}
 	# Run grub from the host, pointing to the guest installation
 	#grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map --root-directory=${MOUNT_DIR} /dev/${LOOPRAW_DEVICE}
 	umount ${MOUNT_DIR}/sys
@@ -567,6 +639,10 @@ cleanup(){
 sync
 chroot ${MOUNT_DIR} umount /proc || true
 chroot ${MOUNT_DIR} umount /sys || true
+chroot ${MOUNT_DIR} umount /boot/efi || true
+
+# Defrag the filesystem to allow for better size reduction below
+e4defrag /dev/mapper/${LOOP_DEVICE} > /dev/null
 umount ${MOUNT_DIR}
 
 # Run FSCK so that resize can work
@@ -577,9 +653,7 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
 	WANTED_SIZE=`expr $FS_BLOCKS '*' 4 '/' 1024 + ${AUTOMATIC_RESIZE_SPACE}` # Add ${AUTOMATIC_RESIZE_SPACE}M
 	resize2fs /dev/mapper/${LOOP_DEVICE} ${WANTED_SIZE}M
-
-	FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`
-	FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024` # some blocks for mbr and multiple block size (4k)
+	FINAL_FS_BLOCKS=`tune2fs -l /dev/mapper/${LOOP_DEVICE} | awk '/Block count/{print $3}'`	
 fi
 
 sync
@@ -587,14 +661,28 @@ kpartx -d ${RAW_NAME}
 rmdir ${MOUNT_DIR}
 
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
-	# Rebuild a smaller partition table
-	parted -s ${RAW_NAME} rm 1
-	parted -s ${RAW_NAME} mkpart primary ext4 1Mi ${FINAL_IMG_SIZE}Mi
-	parted -s ${RAW_NAME} set 1 boot on
-
-	# Add 2M for the 1M at the beginning of the partition and some additionnal space 
-	truncate -s `expr 3 + ${FINAL_IMG_SIZE}`M ${RAW_NAME}
-	install-mbr ${RAW_NAME}
+	if [ "${BOOTTYPE}" = "mbr" ] ; then
+		# some blocks for mbr and multiple block size (4k)
+		FINAL_IMG_SIZE=`expr '(' $FINAL_FS_BLOCKS + 258 ')' '*' 4 '/' 1024`
+		# Rebuild a smaller partition table
+		${PARTED} -s ${RAW_NAME} rm 1
+		${PARTED} -s ${RAW_NAME} mkpart primary ext4 1Mi ${FINAL_IMG_SIZE}Mi
+		${PARTED} -s ${RAW_NAME} set 1 boot on
+		# Add 2M for the 1M at the beginning of the partition and some additional space
+		truncate -s `expr 3 + ${FINAL_IMG_SIZE}`M ${RAW_NAME}
+		install-mbr ${RAW_NAME}
+	else # uefi
+		# Work out the sizes of the new image
+		# 1M for the GPT header, and alignment padding
+		# 100M for the ESP
+		# $FINAL_FS_BLOCKS for the root partition
+		FINAL_IMG_SIZE=$((1 + 100 + $((${FINAL_FS_BLOCKS} * 4 / 1024)) + 1))
+		# Rebuild a smaller partition table
+		${PARTED} -s ${RAW_NAME} rm 2
+		${PARTED} -s -a optimal ${RAW_NAME} -- mkpart ROOT ext4 102Mi -64s
+		# Add 1M padding
+		truncate -s $((1 + ${FINAL_IMG_SIZE}))M ${RAW_NAME}
+	fi
 fi
 
 if ! [ "${AZURE}" = "yes" ] ; then

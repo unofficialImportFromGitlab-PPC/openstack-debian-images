@@ -77,6 +77,26 @@ Select what type of boot manager to use inside the image. The default is
 Grub, but you can as well decide to use syslinux if you prefer.
 
 .LP
+.B \-\-boot-type|\-bt
+.I <mbr|uefi>
+.IP
+
+Select how to boot the image: using legacy MBR-style (aka BIOS or CSM)
+boot, or UEFI. The default is mbr. Selecting uefi requires the use of
+Grub as the boot manager, and will set up an extra EFI System
+Partition inside the image to support UEFI boot.
+
+.LP
+.B \-\-architecture|\-
+.I <amd64|arm64>
+.IP
+
+Select the architecture to target for the output image. This will not
+cross build for that architecture, but will pick the right
+architecture-specific components. Supported options are "amd64" and
+"arm64"; "amd64" is default.
+
+.LP
 .B \-\-sources.list\-mirror|\-s
 .I <source\-list\-mirror>
 .IP
