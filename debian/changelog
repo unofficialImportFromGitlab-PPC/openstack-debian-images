@@ -1,3 +1,9 @@
+openstack-debian-images (1.16) unstable; urgency=medium
+
+  * Fixed debian/rules swapped binary-arch and binary-indep (Closes: #853907).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 02 Feb 2017 13:42:00 +0100
+
 openstack-debian-images (1.15) unstable; urgency=medium
 
   * Added patch from Steve McIntyre <steve@einval.com> to support UEFI and

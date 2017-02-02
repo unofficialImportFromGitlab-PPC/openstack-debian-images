@@ -15,7 +15,7 @@ install:
 	dh_testroot
 	dh_prep
 
-binary-indep: install
+binary-arch: install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
@@ -30,7 +30,7 @@ binary-indep: install
 	dh_md5sums
 	dh_builddeb
 
-binary-arch: install
+binary-indep: install
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install
