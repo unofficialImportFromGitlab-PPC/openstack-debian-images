@@ -1,3 +1,9 @@
+openstack-debian-images (1.17) unstable; urgency=medium
+
+  * Fix cloud-init OpenStack case mistake in data source (Closes: #854482).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 20 Feb 2017 11:36:49 +0000
+
 openstack-debian-images (1.16) unstable; urgency=medium
 
   * Fixed debian/rules swapped binary-arch and binary-indep (Closes: #853907).
