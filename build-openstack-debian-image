@@ -557,7 +557,7 @@ datasource_list: [Azure]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 else
 	# For OpenStack, we would like to use Ec2 and no other API
 	echo "# to update this file, run dpkg-reconfigure cloud-init
-datasource_list: [NoCloud, ConfigDrive, OpenStack, Ec2]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+datasource_list: [ NoCloud, AltCloud, CloudStack, ConfigDrive, OpenStack, Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 fi
 
 # Needed to have automatic mounts of /dev/vdb

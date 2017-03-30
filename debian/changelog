@@ -1,3 +1,9 @@
+openstack-debian-images (1.18) unstable; urgency=medium
+
+  * Add more protocols to the default datasource_list.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 Mar 2017 07:32:55 +0000
+
 openstack-debian-images (1.17) unstable; urgency=medium
 
   * Fix cloud-init OpenStack case mistake in data source (Closes: #854482).
