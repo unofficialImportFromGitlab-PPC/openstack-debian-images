@@ -608,7 +608,7 @@ GRUB_DISABLE_OS_PROBER=true" >>${MOUNT_DIR}/etc/default/grub
 	echo "grub-efi-${ARCH} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
 	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
 	# Run grub from the chroot, pointing to the bind mounted /dev device.
-	chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map /dev/${LOOPRAW_DEVICE}
+	chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map /dev/${LOOPRAW_DEVICE}
 	# Run grub from the host, pointing to the guest installation
 	#grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map --root-directory=${MOUNT_DIR} /dev/${LOOPRAW_DEVICE}
 	umount ${MOUNT_DIR}/sys

@@ -1,3 +1,11 @@
+openstack-debian-images (1.19) unstable; urgency=medium
+
+  * Add --no-nvram when calling grub-install to avoid breaking UEFI boot on the
+    build host (Closes: #860440). Thanks to Steve McIntyre for reporting and
+    patch.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 17 Apr 2017 17:27:15 +0200
+
 openstack-debian-images (1.18) unstable; urgency=medium
 
   * Add more protocols to the default datasource_list.
