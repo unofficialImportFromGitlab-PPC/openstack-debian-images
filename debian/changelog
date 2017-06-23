@@ -1,3 +1,9 @@
+openstack-debian-images (1.20) unstable; urgency=medium
+
+  * Also add security updates for non wheezy/jessie.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 23 Jun 2017 17:02:30 +0200
+
 openstack-debian-images (1.19) unstable; urgency=medium
 
   * Add --no-nvram when calling grub-install to avoid breaking UEFI boot on the

@@ -484,7 +484,7 @@ echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
 echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main
 deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
 
-if [ "${RELEASE}" = "wheezy" ] || [ "${RELEASE}" = "jessie" ] ; then
+if [ "${RELEASE}" != "sid" ] && [ "${RELEASE}" != "unstable" ] ; then
 	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
 deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
 deb http://security.debian.org/ ${RELEASE}/updates main
