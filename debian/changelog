@@ -4,6 +4,7 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Updating copyright format url.
   * Running wrap-and-sort -bast.
   * Updating maintainer field.
+  * Updating standards version to 4.0.0.
 
  -- Daniel Baumann <daniel.baumann@progress-linux.org>  Fri, 04 Aug 2017 21:44:18 +0200
 
