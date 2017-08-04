@@ -1,12 +1,14 @@
-openstack-debian-images (1.20) unstable; urgency=medium
+openstack-debian-images (1.21) UNRELEASED; urgency=medium
 
-  [ Thomas Goirand ]
-  * Also add security updates for non wheezy/jessie.
-
-  [ Daniel Baumann ]
   * Updating vcs fields.
   * Updating copyright format url.
   * Running wrap-and-sort -bast.
+
+ -- Daniel Baumann <daniel.baumann@progress-linux.org>  Fri, 04 Aug 2017 21:44:18 +0200
+
+openstack-debian-images (1.20) unstable; urgency=medium
+
+  * Also add security updates for non wheezy/jessie.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 23 Jun 2017 17:02:30 +0200
 
