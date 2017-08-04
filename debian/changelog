@@ -5,6 +5,7 @@ openstack-debian-images (1.20) unstable; urgency=medium
 
   [ Daniel Baumann ]
   * Updating vcs fields.
+  * Updating copyright format url.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 23 Jun 2017 17:02:30 +0200
 
