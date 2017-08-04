@@ -1,7 +1,7 @@
 Source: openstack-debian-images
 Section: web
 Priority: extra
-Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Maintainer: Debian OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders:
  Thomas Goirand <zigo@debian.org>,
 Build-Depends:
