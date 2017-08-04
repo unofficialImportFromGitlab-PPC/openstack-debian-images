@@ -2,23 +2,26 @@ Source: openstack-debian-images
 Section: web
 Priority: extra
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
-Uploaders: Thomas Goirand <zigo@debian.org>,
-Build-Depends: debhelper (>= 9)
+Uploaders:
+ Thomas Goirand <zigo@debian.org>,
+Build-Depends:
+ debhelper (>= 9),
 Standards-Version: 3.9.8
 Vcs-Browser: https://anonscm.debian.org/cgit/openstack/debian/openstack-debian-images.git
 Vcs-Git: https://anonscm.debian.org/git/openstack/debian/openstack-debian-images.git
 
 Package: openstack-debian-images
 Architecture: amd64 arm64
-Depends: debootstrap,
-         extlinux [amd64],
-         mbr [amd64],
-         initramfs-tools,
-         kpartx,
-         parted,
-         qemu-utils,
-	 dosfstools,
-         ${misc:Depends}
+Depends:
+ debootstrap,
+ dosfstools,
+ extlinux [amd64],
+ initramfs-tools,
+ kpartx,
+ mbr [amd64],
+ parted,
+ qemu-utils,
+ ${misc:Depends},
 Description: script to build a Debian image for OpenStack
  This package contains a script which is helpful for creating images to be used
  with the OpenStack IaaS cloud software suite. It uses only tools available
