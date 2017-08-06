@@ -9,6 +9,7 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
     developers dotfiles.
   * Updating standards version to 4.0.1.
   * Deprecating priority extra as per policy 4.0.1.
+  * Prefixing all debhelper files.
 
  -- Daniel Baumann <daniel.baumann@progress-linux.org>  Fri, 04 Aug 2017 21:44:18 +0200
 
