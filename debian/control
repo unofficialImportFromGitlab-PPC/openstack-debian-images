@@ -6,7 +6,7 @@ Uploaders:
  Thomas Goirand <zigo@debian.org>,
 Build-Depends:
  debhelper (>= 9),
-Standards-Version: 4.0.1
+Standards-Version: 4.1.0
 Vcs-Browser: https://anonscm.debian.org/cgit/openstack/debian/openstack-debian-images.git
 Vcs-Git: https://anonscm.debian.org/git/openstack/debian/openstack-debian-images.git
 
