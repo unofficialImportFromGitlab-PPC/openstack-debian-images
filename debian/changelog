@@ -1,5 +1,6 @@
 openstack-debian-images (1.21) UNRELEASED; urgency=medium
 
+  [ Daniel Baumann ]
   * Updating vcs fields.
   * Updating copyright format url.
   * Running wrap-and-sort -bast.
@@ -12,7 +13,11 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Prefixing all debhelper files.
   * Updating standards version to 4.1.0.
 
- -- Daniel Baumann <daniel.baumann@progress-linux.org>  Fri, 04 Aug 2017 21:44:18 +0200
+  [ Thomas Goirand ]
+  * Changed the default /etc/network/interfaces to use allow-hotplug, set an
+    ens3 so that it works with the new systemd iface names (Closes: #867921).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 
 openstack-debian-images (1.20) unstable; urgency=medium
 
