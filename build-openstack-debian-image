@@ -257,7 +257,7 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
 	# apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp,unscd
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp
 else
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,ntp,unscd
 fi
@@ -532,7 +532,7 @@ fi
 
 chroot ${MOUNT_DIR} apt-get update
 if [ "${AZURE}" = "yes" ] ; then
-	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring
+	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
 fi
 chroot ${MOUNT_DIR} apt-get upgrade -y
