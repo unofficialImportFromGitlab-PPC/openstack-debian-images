@@ -14,8 +14,9 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Updating standards version to 4.1.0.
 
   [ Thomas Goirand ]
-  * Changed the default /etc/network/interfaces to use allow-hotplug, set an
-    ens3 so that it works with the new systemd iface names (Closes: #867921).
+  * Changed the default /etc/network/interfaces to use allow-hotplug, set the
+    source /etc/network/interfaces.d/* at the end of the file, so that the
+    standard sources.list can be overridden (Closes: #867921).
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 
