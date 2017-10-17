@@ -387,8 +387,12 @@ cat >>${MOUNT_DIR}/etc/ssh/sshd_config <<EOF
 ClientAliveInterval 120
 EOF
 
-# Add a default user which is used by cloud-init by default
-chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
+# Add a default user which is used by cloud-init by default.
+# This isn't needed for at least stretch and on, because cloud-init
+# creates the user, and it's best to give users a choice to overwrite it.
+if [ "${RELEASE}" = "wheezy" ] || [ "${RELEASE}" = "jessie" ] ; then
+	chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
+fi
 
 # Adds the "debian" user to sudoers, since that is the way
 # cloud-init grant access

@@ -24,6 +24,9 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
     buster or bullseye as argument.
   * Only install cloud-initramfs-growroot for wheezy and jessie, do not install
     it otherwise (Closes: #828823).
+  * Do not "adduser debian" if we're installing wheezy or jessie images, and
+    let cloud-init create the default user so it can be overridden by a
+    potential metadata info (Closes: #862080).
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 
