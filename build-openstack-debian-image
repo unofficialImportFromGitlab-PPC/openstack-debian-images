@@ -475,9 +475,6 @@ iface eth2 inet dhcp
 source /etc/network/interfaces.d/*
 " > ${MOUNT_DIR}/etc/network/interfaces
 
-# FIXME: DHCP RFC3442 is used incorrect in Azure
-sed -ie 's,rfc3442-classless-static-routes,disabled-\0,' $BODI_CHROOT_PATH/etc/dhcp/dhclient.conf
-
 # Setup the default hostname (will be set by cloud-init
 # at boot time anyway)
 echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
