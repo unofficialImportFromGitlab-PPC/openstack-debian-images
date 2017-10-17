@@ -259,7 +259,10 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 	# apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp
 else
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,cloud-initramfs-growroot,dbus,ntp,unscd
+	if [ "${RELEASE}" = "jessie" ] ; then
+		NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-initramfs-growroot
+	fi
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,dbus,ntp,unscd
 fi
 
 # This is a workaround for python3-cryptography failing to install
