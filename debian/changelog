@@ -1,4 +1,4 @@
-openstack-debian-images (1.21) UNRELEASED; urgency=medium
+openstack-debian-images (1.21) unstable; urgency=medium
 
   [ Daniel Baumann ]
   * Updating vcs fields.
