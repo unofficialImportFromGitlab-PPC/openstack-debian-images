@@ -27,6 +27,7 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Standards-Version is now 4.1.1.
   * Minimize delta with standard Debian images: do not modify sshd_config,
     /etc/bash.bashrc and so on (Closes: #862081).
+  * Add DigitalOcean in datasource_list.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 

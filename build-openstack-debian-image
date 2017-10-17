@@ -541,9 +541,15 @@ if [ "${AZURE}" = "yes" ] ; then
 	echo "# to update this file, run dpkg-reconfigure cloud-init
 datasource_list: [Azure]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 else
-	# For OpenStack, we would like to use Ec2 and no other API
+	# DigitalOcean is available in cloud-init only starting on Jessie and on
+	# (ie: cloud-init >= 0.7.6)
+	if ! [ "${RELEASE}" = "wheezy" ] ; then
+		DIGITAL_OCEAN_SOURCE="DigitalOcean, "
+	else
+		DIGITAL_OCEAN_SOURCE=""
+	fi
 	echo "# to update this file, run dpkg-reconfigure cloud-init
-datasource_list: [ NoCloud, AltCloud, CloudStack, ConfigDrive, OpenStack, Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+datasource_list: [ NoCloud, AltCloud, CloudStack, ConfigDrive, ${DIGITAL_OCEAN_SOURCE}OpenStack, Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 fi
 
 # Needed to have automatic mounts of /dev/vdb
