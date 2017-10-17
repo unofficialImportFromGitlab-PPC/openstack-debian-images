@@ -379,14 +379,6 @@ if [ -n "${ROOT_PASSWORD}" ] ; then
 	chroot ${MOUNT_DIR} sh -c "echo root:${ROOT_PASSWORD} | chpasswd"
 fi
 
-# Otherwise, we have a huge backdoor, since the root password
-# is always the same.
-sed -i "s/PermitRootLogin yes/PermitRootLogin without-password/" ${MOUNT_DIR}/etc/ssh/sshd_config
-cat >>${MOUNT_DIR}/etc/ssh/sshd_config <<EOF
-
-ClientAliveInterval 120
-EOF
-
 # Add a default user which is used by cloud-init by default.
 # This isn't needed for at least stretch and on, because cloud-init
 # creates the user, and it's best to give users a choice to overwrite it.
@@ -413,18 +405,6 @@ mount -t proc proc ${MOUNT_DIR}/proc
 
 echo "# disable pc speaker
 blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
-
-# Enable bash-completion by default
-if [ ${EXTRA} = "yes" ] ; then
-	echo "# enable bash completion in interactive shells
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-  fi
-fi" >>${MOUNT_DIR}/etc/bash.bashrc
-fi
 
 # No clear for the tty1 console
 if [ "${RELEASE}" = "wheezy" ] ; then
