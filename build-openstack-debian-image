@@ -15,7 +15,7 @@ export LC_ALL
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy> [options]
+	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye> [options]
 Options are:
  --minimal|-m
  --azure|-az
@@ -139,7 +139,7 @@ for i in $@ ; do
 		shift
 	;;
 	"--release"|"-r")
-		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] ; then
+		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] || [ "${2}" = "bullseye" ] ; then
 			RELEASE=${2}
 			shift
 			shift

@@ -20,6 +20,8 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Completely remove the dhcpclient.conf sed hack, it's not useful for Azure
     anymore anyway (Closes: #869575).
   * Only install unscd if preparing an Azure image (Closes: #868219).
+  * Document on script useage and manpage that we can use -r with stretch,
+    buster or bullseye as argument.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 

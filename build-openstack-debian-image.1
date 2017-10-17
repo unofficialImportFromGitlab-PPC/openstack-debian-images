@@ -3,7 +3,7 @@
 build\-openstack\-debian\-image \- build a Debian image to be used with OpenStack
 .SH SYNOPSIS
 .B build\-openstack\-debian\-image
-.B \-\-release|\-r <jessie|wheezy>
+.B \-\-release|\-r <wheezy|jessie|stretch|buster|bullseye>
 [ OPTIONS ]
 
 .SH DESCRIPTION
@@ -33,15 +33,24 @@ is set in /etc/ssh/sshd_config).
 
 .LP
 .B \-\-release|\-r
-.I wheezy|jessie
+.I wheezy|jessie|stretch|buster|bullseye
 .IP
 
 Sets the
 .I release
-name to be installed. Currently only 2 values a possible:
+name to be installed. Currently only 5 values a possible:
 .I wheezy
-and
-.I jessie.
+or
+.I jessie
+or
+.I stretch
+or
+.I buster
+or
+.I bullseye.
+
+At the time of writing, bullseye is only here to prepare the future, and
+will not work until it effectively becomes the new testing.
 
 .SH "OPTIONS"
 
