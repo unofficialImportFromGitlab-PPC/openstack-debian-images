@@ -5,13 +5,10 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Updating copyright format url.
   * Running wrap-and-sort -bast.
   * Updating maintainer field.
-  * Updating standards version to 4.0.0.
   * Removing gbp.conf, not used anymore or should be specified in the
     developers dotfiles.
-  * Updating standards version to 4.0.1.
   * Deprecating priority extra as per policy 4.0.1.
   * Prefixing all debhelper files.
-  * Updating standards version to 4.1.0.
 
   [ Thomas Goirand ]
   * Changed the default /etc/network/interfaces to use allow-hotplug, set the
@@ -27,6 +24,7 @@ openstack-debian-images (1.21) UNRELEASED; urgency=medium
   * Do not "adduser debian" if we're installing wheezy or jessie images, and
     let cloud-init create the default user so it can be overridden by a
     potential metadata info (Closes: #862080).
+  * Standards-Version is now 4.1.1.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Oct 2017 23:55:43 +0200
 
