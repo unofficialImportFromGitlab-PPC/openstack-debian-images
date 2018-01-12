@@ -473,8 +473,8 @@ deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.lis
 if [ "${RELEASE}" != "sid" ] && [ "${RELEASE}" != "unstable" ] ; then
 	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
 deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
-deb http://security.debian.org/ ${RELEASE}/updates main
-deb-src http://security.debian.org/ ${RELEASE}/updates main
+deb http://security.debian.org/debian-security ${RELEASE}/updates main
+deb-src http://security.debian.org/debian-security ${RELEASE}/updates main
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
@@ -522,7 +522,24 @@ if [ "${AZURE}" = "yes" ] ; then
 	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
 fi
-chroot ${MOUNT_DIR} apt-get upgrade -y
+
+# Run dist-upgrade here - some security updates may involve installing
+# packages with new names, like kernels with a new ABI chroot
+${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
+
+# Specifically remove all but the highest-versioned kernel
+# image. Let's not waste space on older kernels we won't use...
+OLD_KERNELS=$(COLUMNS=200 chroot ${MOUNT_DIR} dpkg -l | awk '/^ii  linux-image-[0-9]/ {print $2}' | sort -u | head -n -1)
+NUM_KERNELS=$(echo $OLD_KERNELS | wc -w)
+if [ $NUM_KERNELS -gt 0 ]; then
+    echo "Removing old kernels: $OLD_KERNELS"
+    chroot ${MOUNT_DIR} apt-get remove --purge -y $OLD_KERNELS
+fi
+
+# And run autoremove to remove any dependencies that might have been
+# brought in too
+echo "Running apt-get autoremove:"
+chroot ${MOUNT_DIR} apt-get autoremove -y
 
 # Setup cloud-init, cloud-utils and cloud-initramfs-growroot
 # These are only available from backports in Wheezy
