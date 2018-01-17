@@ -1,3 +1,10 @@
+openstack-debian-images (1.22) UNRELEASED; urgency=medium
+
+  * Team upload.
+  * Add e2fsprogs to Depends (Closes: #887186).
+
+ -- Ondřej Nový <onovy@debian.org>  Wed, 17 Jan 2018 15:11:21 +0100
+
 openstack-debian-images (1.21) unstable; urgency=medium
 
   [ Daniel Baumann ]
