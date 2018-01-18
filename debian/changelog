@@ -1,4 +1,4 @@
-openstack-debian-images (1.23) UNRELEASED; urgency=medium
+openstack-debian-images (1.23) unstable; urgency=medium
 
   * Apply patch from Steve McIntyre: do dist-upgrade and not just upgrade after
     the deboostrap process, and remove old kernels.
