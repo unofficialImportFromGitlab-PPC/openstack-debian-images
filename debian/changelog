@@ -1,10 +1,16 @@
-openstack-debian-images (1.22) unstable; urgency=medium
+openstack-debian-images (1.23) UNRELEASED; urgency=medium
 
   * Apply patch from Steve McIntyre: do dist-upgrade and not just upgrade after
     the deboostrap process, and remove old kernels.
-  * Explicitly depends on e2fsprogs (Closes: #887186).
 
- -- Thomas Goirand <zigo@debian.org>  Fri, 12 Jan 2018 14:39:18 +0100
+ -- Thomas Goirand <zigo@debian.org>  Thu, 18 Jan 2018 16:13:16 +0100
+
+openstack-debian-images (1.22) unstable; urgency=medium
+
+  * Team upload.
+  * Add e2fsprogs to Depends (Closes: #887186).
+
+ -- Ondřej Nový <onovy@debian.org>  Wed, 17 Jan 2018 15:12:20 +0100
 
 openstack-debian-images (1.21) unstable; urgency=medium
 
