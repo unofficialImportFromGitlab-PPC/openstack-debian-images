@@ -525,7 +525,7 @@ fi
 
 # Run dist-upgrade here - some security updates may involve installing
 # packages with new names, like kernels with a new ABI chroot
-${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
+chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
 
 # Specifically remove all but the highest-versioned kernel
 # image. Let's not waste space on older kernels we won't use...

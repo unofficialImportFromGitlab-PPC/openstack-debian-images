@@ -1,3 +1,10 @@
+openstack-debian-images (1.24) unstable; urgency=medium
+
+  * Add missing chroot when doing the dist-upgrade.
+  * Fixed VCS URLs to point to salsa.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 19 Jan 2018 15:23:56 +0100
+
 openstack-debian-images (1.23) unstable; urgency=medium
 
   * Apply patch from Steve McIntyre: do dist-upgrade and not just upgrade after
