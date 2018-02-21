@@ -1,3 +1,11 @@
+openstack-debian-images (1.25) unstable; urgency=medium
+
+  * Change default order for datasource_source: sets OpenStack before
+    CloudStack and DigitalOcean. This was causing a 120s booting delay when
+    booting on a normal OpenStack cloud without config drive.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 21 Feb 2018 12:33:41 +0100
+
 openstack-debian-images (1.24) unstable; urgency=medium
 
   * Add missing chroot when doing the dist-upgrade.

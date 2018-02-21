@@ -566,7 +566,7 @@ else
 		DIGITAL_OCEAN_SOURCE=""
 	fi
 	echo "# to update this file, run dpkg-reconfigure cloud-init
-datasource_list: [ NoCloud, AltCloud, CloudStack, ConfigDrive, ${DIGITAL_OCEAN_SOURCE}OpenStack, Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+datasource_list: [ NoCloud, AltCloud, ConfigDrive, OpenStack, CloudStack, ${DIGITAL_OCEAN_SOURCE} Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
 fi
 
 # Needed to have automatic mounts of /dev/vdb
