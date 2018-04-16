@@ -1,10 +1,3 @@
-openstack-debian-images (1.26) UNRELEASED; urgency=medium
-
-  * d/control: Add trailing tilde to min version depend to allow
-    backports
-
- -- Ondřej Nový <onovy@debian.org>  Tue, 27 Feb 2018 16:39:52 +0100
-
 openstack-debian-images (1.25) unstable; urgency=medium
 
   * Change default order for datasource_source: sets OpenStack before
