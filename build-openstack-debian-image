@@ -31,6 +31,9 @@ Options are:
  --password|-p <root-password> (dangerous option: avoid it if possible)
  --boot-type|-bt <boot type> (default: mbr)
  --architecture|-a <architecture> (default: amd64)
+ --dest-hdd <dest-hdd>
+ --no-cloud-init
+ --root-ssh-key <path-to-id_rsa.pub>
 For more info: man $0"
 	exit 1
 }
@@ -40,6 +43,9 @@ AZURE=no
 BOOTMANAGER=grub
 BOOTTYPE=mbr
 ARCH=amd64
+REAL_HARDWARE=no
+DEST_HDD=vda
+CLOUD_INIT=yes
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -165,12 +171,33 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--root-ssh-key")
+		if [ -z "${2}" ] ; then
+			echo "No parameter for the id_rsa.pub"
+		fi
+		ROOT_SSH_KEY=${2}
+		shift
+		shift
+	;;
 	"--output"|"-o")
 		if [ -z "${2}" ] ; then
 			echo "No output file specified"
 		fi
 		OUTPUT=${2}
 		shift
+		shift
+	;;
+	"--dest-hdd")
+		if [ -z "${2}" ] ; then
+			echo "No dest hdd specified"
+		fi
+		REAL_HARDWARE=yes
+		DEST_HDD=vda
+		shift
+		shift
+	;;
+	"--no-cloud-init")
+		CLOUD_INIT=no
 		shift
 	;;
 	*)
@@ -260,9 +287,14 @@ if [ "${RELEASE}" = "wheezy" ] ; then
 	NEEDED_PACKAGES=${NEEDED_PACKAGES},python,python-paramiko,python-argparse,python-cheetah,python-configobj,python-oauth,python-software-properties,python-yaml,python-boto,python-prettytable,initramfs-tools,python-requests,acpid,acpi-support-base,ntp
 else
 	if [ "${RELEASE}" = "jessie" ] ; then
-		NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-initramfs-growroot
+		if [ "${CLOUD_INIT}" = "yes" ] ; then
+			NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-initramfs-growroot
+		fi
 	fi
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils,dbus,ntp,unscd
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},dbus,ntp,unscd
+	if [ "${CLOUD_INIT}" = "yes" ] ; then
+		NEEDED_PACKAGES=${NEEDED_PACKAGES},cloud-init,cloud-utils
+	fi
 fi
 
 # This is a workaround for python3-cryptography failing to install
@@ -279,10 +311,14 @@ if ! [ `whoami` = "root" ] ; then
 	echo "You have to be root to run this script"
 	exit 1
 fi
-FILE_NAME=debian-${RELEASE}-${RELEASE_NUM}.0.0-1-${ARCH}
-RAW_NAME=${OUTPUT}.raw
-QCOW2_NAME=${OUTPUT}.qcow2
-rm -f ${RAW_NAME}
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	RAW_NAME=${OUTPUT}.raw
+	QCOW2_NAME=${OUTPUT}.qcow2
+	rm -f ${RAW_NAME}
+	qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
+else
+	RAW_NAME=/dev/${DEST_HDD}
+fi
 
 set -x
 
@@ -290,38 +326,42 @@ set -x
 ### Prepare the HDD (format, ext.) ###
 ######################################
 PARTED=/sbin/parted
-rm -f $RAW_NAME
-qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
 
 if [ "${BOOTTYPE}" = "mbr" ] ; then
 	${PARTED} -s ${RAW_NAME} mktable msdos
 	${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
 	${PARTED} -s ${RAW_NAME} set 1 boot on
 	install-mbr --force ${RAW_NAME}
-	RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1)
-	if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-		LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
-		LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
-		echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
-	else
-		echo "It seems kpartx didn't mount the image correctly: exiting."
-		exit 1
+
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1)
+		if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+			LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+			LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+			echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+		else
+			echo "It seems kpartx didn't mount the image correctly: exiting."
+			exit 1
+		fi
 	fi
 else # uefi
 	${PARTED} -s ${RAW_NAME} mktable gpt
 	${PARTED} -s -a optimal ${RAW_NAME} mkpart ESP fat32 1Mi 101Mi
 	${PARTED} -s -a optimal ${RAW_NAME} -- mkpart ROOT ext4 102Mi -64s
 	${PARTED} -s ${RAW_NAME} set 1 esp on
-	RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1 | tail -1)
-	if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-		LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
-		LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
-		echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
-	else
-		echo "It seems kpartx didn't mount the image correctly: exiting."
-		exit 1
+
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1 | tail -1)
+		if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+			LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+			LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+			echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+		else
+			echo "It seems kpartx didn't mount the image correctly: exiting."
+			exit 1
+		fi
+		LOOP_DEVICE_ESP=$(kpartx -asv ${RAW_NAME} 2>&1 | head -1 | cut -d" " -f3)
 	fi
-	LOOP_DEVICE_ESP=$(kpartx -asv ${RAW_NAME} 2>&1 | head -1 | cut -d" " -f3)
 fi
 
 cleanup(){
@@ -343,25 +383,38 @@ cleanup(){
 	umount -l ${MOUNT_DIR}
 	rmdir ${MOUNT_DIR}
 
-	kpartx -d ${RAW_NAME}
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		kpartx -d ${RAW_NAME}
+	fi
 	exit $error
 }
 trap "cleanup" EXIT TERM INT
 
-mkfs.ext4 /dev/mapper/${LOOP_DEVICE}
-UUID=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE})
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	DEST_PART=/dev/mapper/${LOOP_DEVICE}
+else
+	if [ "${BOOTTYPE}" = "mbr" ] ; then
+		DEST_PART=/dev/${DEST_HDD}1
+	else
+		DEST_PART_ESP=/dev/${DEST_HDD}1
+		DEST_PART=/dev/${DEST_HDD}2
+	fi
+fi
+
+mkfs.ext4 -F ${DEST_PART}
+UUID=$(blkid -o value -s UUID ${DEST_PART})
 
 # No fsck because of X days without checks
-tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
+tune2fs -i 0 ${DEST_PART}
 
 MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
 
-mount /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
+mount ${DEST_PART} ${MOUNT_DIR}
 if [ "${BOOTTYPE}" = "uefi" ] ; then
-	mkfs.vfat /dev/mapper/${LOOP_DEVICE_ESP}
-	UUID_ESP=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE_ESP})
+	mkfs.vfat -F ${DEST_PART_ESP}
+	UUID_ESP=$(blkid -o value -s UUID ${DEST_PART_ESP})
 	mkdir -p ${MOUNT_DIR}/boot/efi
-	mount /dev/mapper/${LOOP_DEVICE_ESP} ${MOUNT_DIR}/boot/efi
+	mount ${DEST_PART_ESP} ${MOUNT_DIR}/boot/efi
 fi
 
 debootstrap --verbose \
@@ -379,18 +432,27 @@ if [ -n "${ROOT_PASSWORD}" ] ; then
 	chroot ${MOUNT_DIR} sh -c "echo root:${ROOT_PASSWORD} | chpasswd"
 fi
 
-# Add a default user which is used by cloud-init by default.
-# This isn't needed for at least stretch and on, because cloud-init
-# creates the user, and it's best to give users a choice to overwrite it.
-if [ "${RELEASE}" = "wheezy" ] || [ "${RELEASE}" = "jessie" ] ; then
-	chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
+if [ -n "${ROOT_SSH_KEY}" ] ; then
+	mkdir -p ${MOUNT_DIR}/root/.ssh
+	chmod 700 ${MOUNT_DIR}/root/.ssh
+	cat <${ROOT_SSH_KEY} >${MOUNT_DIR}/root/.ssh/authorized_keys
+	chmod 600 ${MOUNT_DIR}/root/.ssh/authorized_keys
 fi
 
-# Adds the "debian" user to sudoers, since that is the way
-# cloud-init grant access
-mkdir -p ${MOUNT_DIR}/etc/sudoers.d
-echo "${USER_LOGIN} ALL = NOPASSWD: ALL" >${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
-chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
+if [ "${CLOUD_INIT}" = "yes" ] ; then
+	# Add a default user which is used by cloud-init by default.
+	# This isn't needed for at least stretch and on, because cloud-init
+	# creates the user, and it's best to give users a choice to overwrite it.
+	if [ "${RELEASE}" = "wheezy" ] || [ "${RELEASE}" = "jessie" ] ; then
+		chroot ${MOUNT_DIR} adduser --gecos Cloud-init-user --disabled-password --quiet ${USER_LOGIN}
+	fi
+
+	# Adds the "debian" user to sudoers, since that is the way
+	# cloud-init grant access
+	mkdir -p ${MOUNT_DIR}/etc/sudoers.d
+	echo "${USER_LOGIN} ALL = NOPASSWD: ALL" >${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
+	chmod 0440 ${MOUNT_DIR}/etc/sudoers.d/debian-cloud-init
+fi
 
 ### Customize: misc stuff ###
 # # # # # # # # # # # # # # #
@@ -403,8 +465,10 @@ if [ "${BOOTTYPE}" = "uefi" ] ; then
 fi
 mount -t proc proc ${MOUNT_DIR}/proc
 
-echo "# disable pc speaker
-blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	echo "# disable pc speaker
+	blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
+fi
 
 # No clear for the tty1 console
 if [ "${RELEASE}" = "wheezy" ] ; then
@@ -554,27 +618,29 @@ fi
 
 chroot ${MOUNT_DIR} apt-get install -y linux-image-${ARCH}
 
-if [ "${AZURE}" = "yes" ] ; then
-	echo "# to update this file, run dpkg-reconfigure cloud-init
+if [ "${CLOUD_INIT}" = "yes" ] ; then
+	if [ "${AZURE}" = "yes" ] ; then
+		echo "# to update this file, run dpkg-reconfigure cloud-init
 datasource_list: [Azure]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
-else
-	# DigitalOcean is available in cloud-init only starting on Jessie and on
-	# (ie: cloud-init >= 0.7.6)
-	if ! [ "${RELEASE}" = "wheezy" ] ; then
-		DIGITAL_OCEAN_SOURCE="DigitalOcean, "
 	else
-		DIGITAL_OCEAN_SOURCE=""
-	fi
-	echo "# to update this file, run dpkg-reconfigure cloud-init
+		# DigitalOcean is available in cloud-init only starting on Jessie and on
+		# (ie: cloud-init >= 0.7.6)
+		if ! [ "${RELEASE}" = "wheezy" ] ; then
+			DIGITAL_OCEAN_SOURCE="DigitalOcean, "
+		else
+			DIGITAL_OCEAN_SOURCE=""
+		fi
+		echo "# to update this file, run dpkg-reconfigure cloud-init
 datasource_list: [ NoCloud, AltCloud, ConfigDrive, OpenStack, CloudStack, ${DIGITAL_OCEAN_SOURCE} Ec2, MAAS, OVF, GCE, None ]" >${MOUNT_DIR}/etc/cloud/cloud.cfg.d/90_dpkg.cfg
+	fi
+
+	# Needed to have automatic mounts of /dev/vdb
+	echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
+	echo "manage_etc_hosts: true" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
+
+	# Set the cloud init default user (required for the keypair to be put in the right home directory)
+	sed -i "s/name: debian/name: ${USER_LOGIN}/" ${MOUNT_DIR}/etc/cloud/cloud.cfg
 fi
-
-# Needed to have automatic mounts of /dev/vdb
-echo "mount_default_fields: [~, ~, 'auto', 'defaults,nofail', '0', '2']" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
-echo "manage_etc_hosts: true" >>${MOUNT_DIR}/etc/cloud/cloud.cfg
-
-# Set the cloud init default user (required for the keypair to be put in the right home directory)
-sed -i "s/name: debian/name: ${USER_LOGIN}/" ${MOUNT_DIR}/etc/cloud/cloud.cfg
 
 if [ "${AZURE}" = "yes" ] ; then
 	unshare --pid --fork --mount-proc chroot ${MOUNT_DIR} apt-get install -y waagent
@@ -617,7 +683,12 @@ GRUB_DISABLE_OS_PROBER=true" >>${MOUNT_DIR}/etc/default/grub
 	echo "grub-efi-${ARCH} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
 	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
 	# Run grub from the chroot, pointing to the bind mounted /dev device.
-	chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map /dev/${LOOPRAW_DEVICE}
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		GRUB_DESTINATION_DEV=/dev/${LOOPRAW_DEVICE}
+	else
+		GRUB_DESTINATION_DEV=/dev/${DEST_HDD}
+	fi
+	chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map ${GRUB_DESTINATION_DEV}
 	# Run grub from the host, pointing to the guest installation
 	#grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map --root-directory=${MOUNT_DIR} /dev/${LOOPRAW_DEVICE}
 	umount ${MOUNT_DIR}/sys
@@ -657,11 +728,11 @@ chroot ${MOUNT_DIR} umount /sys || true
 chroot ${MOUNT_DIR} umount /boot/efi || true
 
 # Defrag the filesystem to allow for better size reduction below
-e4defrag /dev/mapper/${LOOP_DEVICE} > /dev/null
 umount ${MOUNT_DIR}
+e4defrag ${DEST_PART} > /dev/null
 
 # Run FSCK so that resize can work
-fsck.ext4 -f /dev/mapper/${LOOP_DEVICE} || true
+fsck.ext4 -f ${DEST_PART} || true
 
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	resize2fs -M /dev/mapper/${LOOP_DEVICE}
@@ -672,7 +743,9 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 fi
 
 sync
-kpartx -d ${RAW_NAME}
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	kpartx -d ${RAW_NAME}
+fi
 rmdir ${MOUNT_DIR}
 
 if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
@@ -700,13 +773,15 @@ if [ "${AUTOMATIC_RESIZE}" = "yes" ] ; then
 	fi
 fi
 
-if ! [ "${AZURE}" = "yes" ] ; then
-	QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
-	if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
-		OTHER_QEMU_IMG_OPTIONS=" -o compat=0.10"
-	else
-		OTHER_QEMU_IMG_OPTIONS=""
-	fi
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	if ! [ "${AZURE}" = "yes" ] ; then
+		QEMU_VERSION=`qemu-img --help | head -n 1 | cut -d" " -f3 | cut -d"," -f1`
+		if dpkg --compare-versions ${QEMU_VERSION} gt 1.0 ; then
+			OTHER_QEMU_IMG_OPTIONS=" -o compat=0.10"
+		else
+			OTHER_QEMU_IMG_OPTIONS=""
+		fi
 
-	qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
+		qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
+	fi
 fi

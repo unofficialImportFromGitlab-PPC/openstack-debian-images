@@ -1,3 +1,12 @@
+openstack-debian-images (1.26) UNRELEASED; urgency=medium
+
+  * Add the option to setup a real hardware without cloud-init. With this
+    feature, one can run openstack-debian-images to install a standard Debian
+    system on a normal hard drive, for example after booting on a live system
+    over PXE. This can be used to setup a whole cluster of physical computers.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 16 Apr 2018 22:31:53 +0200
+
 openstack-debian-images (1.25) unstable; urgency=medium
 
   * Change default order for datasource_source: sets OpenStack before
