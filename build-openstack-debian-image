@@ -34,6 +34,7 @@ Options are:
  --dest-hdd <dest-hdd>
  --no-cloud-init
  --root-ssh-key <path-to-id_rsa.pub>
+ --hostname <hostname>
 For more info: man $0"
 	exit 1
 }
@@ -198,6 +199,14 @@ for i in $@ ; do
 	;;
 	"--no-cloud-init")
 		CLOUD_INIT=no
+		shift
+	;;
+	"--hostname")
+		if [ -z "${2}" ] ; then
+			echo "No hostname specified"
+		fi
+		HOSTNAME=${2}
+		shift
 		shift
 	;;
 	*)
@@ -499,10 +508,8 @@ fi
 
 if [ "${REAL_HARDWARE}" = "no" ] ; then
 	rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
-#else
-#	# Make sure we do generate new host keys
-#	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} dpkg-reconfigure openssh-server
 fi
+
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
 rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 
@@ -531,9 +538,20 @@ iface eth2 inet dhcp
 source /etc/network/interfaces.d/*
 " > ${MOUNT_DIR}/etc/network/interfaces
 
-# Setup the default hostname (will be set by cloud-init
-# at boot time anyway)
-echo "debian.example.com" >${MOUNT_DIR}/etc/hostname
+# Setup the default hostname (will be set by cloud-init at boot,
+# though for installing real hardware, we do care)
+if [ -z "${HOSTNAME}" ] ; then
+	HOSTNAME="debian.example.com"
+else
+fi
+echo "${HOSTNAME}" >${MOUNT_DIR}/etc/hostname
+echo "127.0.0.1	localhost
+127.0.1.1	${HOSTNAME}
+
+::1	localhost ip6-localhost ip6-loopback
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+" >${MOUNT_DIR}/etc/hosts
 
 # This should be a correct default everywhere
 echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main
