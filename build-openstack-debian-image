@@ -782,8 +782,8 @@ chroot ${MOUNT_DIR} umount /sys || true
 chroot ${MOUNT_DIR} umount /boot/efi || true
 
 # Defrag the filesystem to allow for better size reduction below
-umount ${MOUNT_DIR}
 e4defrag ${DEST_PART} > /dev/null
+umount ${MOUNT_DIR}
 
 # Run FSCK so that resize can work
 fsck.ext4 -f ${DEST_PART} || true
