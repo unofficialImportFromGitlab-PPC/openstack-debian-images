@@ -35,6 +35,7 @@ Options are:
  --no-cloud-init
  --root-ssh-key <path-to-id_rsa.pub>
  --hostname <hostname>
+ --static-eth0 <CIDR-address>
 For more info: man $0"
 	exit 1
 }
@@ -209,6 +210,13 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--static-eth0")
+		if [ -z "${2}" ] ; then
+			echo "No IP specified"
+		fi
+		STATIC_ETH=${2}
+		shift
+		shift
 	*)
 	;;
 	esac
@@ -514,6 +522,24 @@ rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
 rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 
 # Setup networking (eg: DHCP by default)
+if [ -n "${STATIC_ETH}" ] ; then
+	ETH0_ADDR=$(echo ${STATIC_ETH} | cut -d/ -f1)
+	ETH0_NETWORK=$(ipcalc ${STATIC_ETH} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
+	ETH0_BROADCAST=$(ipcalc ${STATIC_ETH} | grep '^Broadcast:' | awk '{print $2}')
+	ETH0_GATEWAY=$(ipcalc ${STATIC_ETH} | grep '^HostMin:' | awk '{print $2}')
+	ETH0_IFACE="auto eth0
+iface eth0 inet static
+	address ${ETH0_ADDR}
+	network ${ETH0_NETWORK}
+	broadcast ${ETH0_BROADCAST}
+	gateway ${ETH0_GATEWAY}
+"
+else
+	ETH0_IFACE="allow-hotplug eth0
+iface eth0 inet dhcp
+"
+fi
+
 echo "# This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
 
@@ -522,8 +548,7 @@ auto lo
 iface lo inet loopback
 
 # The normal eth0
-allow-hotplug eth0
-iface eth0 inet dhcp
+${ETH0_IFACE}
 
 # Additional interfaces, just in case we're using
 # multiple networks
