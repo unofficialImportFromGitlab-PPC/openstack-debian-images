@@ -36,6 +36,7 @@ Options are:
  --root-ssh-key <path-to-id_rsa.pub>
  --hostname <hostname>
  --static-eth0 <CIDR-address>
+ --reboot-after-install
 For more info: man $0"
 	exit 1
 }
@@ -48,6 +49,7 @@ ARCH=amd64
 REAL_HARDWARE=no
 DEST_HDD=vda
 CLOUD_INIT=yes
+REBOOT_AFTER_INSTALL=no
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -217,6 +219,10 @@ for i in $@ ; do
 		STATIC_ETH=${2}
 		shift
 		shift
+	"--reboot-after-install")
+		REBOOT_AFTER_INSTALL=yes
+		shift
+	;;
 	*)
 	;;
 	esac
@@ -832,4 +838,8 @@ if [ "${REAL_HARDWARE}" = "no" ] ; then
 
 		qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
 	fi
+fi
+
+if [ "${REBOOT_AFTER_INSTALL}" = "yes" ] ; then
+	shutdown -r now
 fi
