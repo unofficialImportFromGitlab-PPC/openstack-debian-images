@@ -37,8 +37,8 @@ Options are:
  --hostname <hostname>
  --static-eth0 <CIDR-address>
  --reboot-after-install
- --install-nonfree-repo
- --postinstall-packages <packages>
+ --install-nonfree-repo (installs contrib and non-free)
+ --postinstall-packages <packages> (useful for non-free/contrib)
 For more info: man $0"
 	exit 1
 }
@@ -240,7 +240,7 @@ for i in $@ ; do
 	"--postinstall-packages")
 		if [ -z "${2}" ] ; then
 			echo "No postinstall packages specified"
-			useage
+			usage
 		fi
 		POSTINSTALL_PACKAGES=${2}
 		shift
@@ -530,9 +530,6 @@ fi
 # systemd-shim conflicting with systemd-sysv.
 chroot ${MOUNT_DIR} apt-get install -y locales-all libpam-systemd
 
-if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
-	chroot ${MOUNT_DIR} apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
-fi
 
 # Turn off console blanking which is *very* annoying
 # and increase KEYBOARD_DELAY because it can be annoying
@@ -670,6 +667,10 @@ chroot ${MOUNT_DIR} apt-get update
 if [ "${AZURE}" = "yes" ] ; then
 	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
+fi
+
+if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
+	chroot ${MOUNT_DIR} apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
 fi
 
 # Run dist-upgrade here - some security updates may involve installing
