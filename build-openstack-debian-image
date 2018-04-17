@@ -37,6 +37,8 @@ Options are:
  --hostname <hostname>
  --static-eth0 <CIDR-address>
  --reboot-after-install
+ --install-nonfree-repo
+ --postinstall-packages <packages>
 For more info: man $0"
 	exit 1
 }
@@ -50,6 +52,7 @@ REAL_HARDWARE=no
 DEST_HDD=vda
 CLOUD_INIT=yes
 REBOOT_AFTER_INSTALL=no
+INSTALL_NONFREE_REPO=no
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -170,6 +173,7 @@ for i in $@ ; do
 	"--password"|"-p")
 		if [ -z "${2}" ] ; then
 			echo "No parameter defining the root password"
+			usage
 		fi
 		ROOT_PASSWORD=${2}
 		shift
@@ -178,6 +182,7 @@ for i in $@ ; do
 	"--root-ssh-key")
 		if [ -z "${2}" ] ; then
 			echo "No parameter for the id_rsa.pub"
+			usage
 		fi
 		ROOT_SSH_KEY=${2}
 		shift
@@ -186,6 +191,7 @@ for i in $@ ; do
 	"--output"|"-o")
 		if [ -z "${2}" ] ; then
 			echo "No output file specified"
+			usage
 		fi
 		OUTPUT=${2}
 		shift
@@ -194,6 +200,7 @@ for i in $@ ; do
 	"--dest-hdd")
 		if [ -z "${2}" ] ; then
 			echo "No dest hdd specified"
+			usage
 		fi
 		REAL_HARDWARE=yes
 		DEST_HDD=vda
@@ -207,6 +214,7 @@ for i in $@ ; do
 	"--hostname")
 		if [ -z "${2}" ] ; then
 			echo "No hostname specified"
+			usage
 		fi
 		HOSTNAME=${2}
 		shift
@@ -215,6 +223,7 @@ for i in $@ ; do
 	"--static-eth0")
 		if [ -z "${2}" ] ; then
 			echo "No IP specified"
+			usage
 		fi
 		STATIC_ETH=${2}
 		shift
@@ -222,6 +231,19 @@ for i in $@ ; do
 	;;
 	"--reboot-after-install")
 		REBOOT_AFTER_INSTALL=yes
+		shift
+	;;
+	"--install-nonfree-repo")
+		INSTALL_NONFREE_REPO=yes
+		shift
+	;;
+	"--postinstall-packages")
+		if [ -z "${2}" ] ; then
+			echo "No postinstall packages specified"
+			useage
+		fi
+		POSTINSTALL_PACKAGES=${2}
+		shift
 		shift
 	;;
 	*)
@@ -508,6 +530,10 @@ fi
 # systemd-shim conflicting with systemd-sysv.
 chroot ${MOUNT_DIR} apt-get install -y locales-all libpam-systemd
 
+if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
+	chroot ${MOUNT_DIR} apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
+fi
+
 # Turn off console blanking which is *very* annoying
 # and increase KEYBOARD_DELAY because it can be annoying
 # over network.
@@ -585,28 +611,33 @@ ff02::2	ip6-allrouters
 " >${MOUNT_DIR}/etc/hosts
 
 # This should be a correct default everywhere
-echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main
-deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main" >${MOUNT_DIR}/etc/apt/sources.list
+if [ "${INSTALL_NONFREE_REPO}" = yes ] ; then
+	NON_FREE=" contrib non-free"
+else
+	NON_FREE=""
+fi
+echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE} main${NON_FREE}
+deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main${NON_FREE}" >${MOUNT_DIR}/etc/apt/sources.list
 
 if [ "${RELEASE}" != "sid" ] && [ "${RELEASE}" != "unstable" ] ; then
-	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
-deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main
-deb http://security.debian.org/debian-security ${RELEASE}/updates main
-deb-src http://security.debian.org/debian-security ${RELEASE}/updates main
+	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main${NON_FREE}
+deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main${NON_FREE}
+deb http://security.debian.org/debian-security ${RELEASE}/updates main${NON_FREE}
+deb-src http://security.debian.org/debian-security ${RELEASE}/updates main${NON_FREE}
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
 if [ "${RELEASE}" = "wheezy" ] ; then
-	echo "deb ${SOURCE_LIST_MIRROR} wheezy-backports main
-deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main
+	echo "deb ${SOURCE_LIST_MIRROR} wheezy-backports main${NON_FREE}
+deb-src ${SOURCE_LIST_MIRROR} wheezy-backports main${NON_FREE}
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
 if [ "${RELEASE}" = "jessie" ] && [ "${AZURE}" = "yes" ] ; then
-	echo "deb ${SOURCE_LIST_MIRROR} jessie-backports main
-deb-src ${SOURCE_LIST_MIRROR} jessie-backports main
-deb ${SOURCE_LIST_MIRROR}-azure jessie-backports main
-deb-src ${SOURCE_LIST_MIRROR}-azure jessie-backports main
+	echo "deb ${SOURCE_LIST_MIRROR} jessie-backports main${NON_FREE}
+deb-src ${SOURCE_LIST_MIRROR} jessie-backports main${NON_FREE}
+deb ${SOURCE_LIST_MIRROR}-azure jessie-backports main${NON_FREE}
+deb-src ${SOURCE_LIST_MIRROR}-azure jessie-backports main${NON_FREE}
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
