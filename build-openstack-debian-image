@@ -497,7 +497,12 @@ if [ -e ${MOUNT_DIR}/etc/kbd/config ] ; then
 	sed -i 's/^[ \t#]KEYBOARD_DELAY=.*/KEYBOARD_DELAY=1000/' ${MOUNT_DIR}/etc/kbd/config
 fi
 
-rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
+#else
+#	# Make sure we do generate new host keys
+#	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} dpkg-reconfigure openssh-server
+fi
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
 rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 
