@@ -219,6 +219,7 @@ for i in $@ ; do
 		STATIC_ETH=${2}
 		shift
 		shift
+	;;
 	"--reboot-after-install")
 		REBOOT_AFTER_INSTALL=yes
 		shift
@@ -573,7 +574,6 @@ source /etc/network/interfaces.d/*
 # though for installing real hardware, we do care)
 if [ -z "${HOSTNAME}" ] ; then
 	HOSTNAME="debian.example.com"
-else
 fi
 echo "${HOSTNAME}" >${MOUNT_DIR}/etc/hostname
 echo "127.0.0.1	localhost
