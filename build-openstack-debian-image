@@ -556,11 +556,13 @@ if [ -n "${STATIC_ETH}" ] ; then
 	ETH0_ADDR=$(echo ${STATIC_ETH} | cut -d/ -f1)
 	ETH0_NETWORK=$(ipcalc ${STATIC_ETH} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
 	ETH0_BROADCAST=$(ipcalc ${STATIC_ETH} | grep '^Broadcast:' | awk '{print $2}')
+	ETH0_NETMASK=$(ipcalc ${STATIC_ETH} | grep '^Netmask:' | awk '{print $2}')
 	ETH0_GATEWAY=$(ipcalc ${STATIC_ETH} | grep '^HostMin:' | awk '{print $2}')
 	ETH0_IFACE="auto eth0
 iface eth0 inet static
 	address ${ETH0_ADDR}
 	network ${ETH0_NETWORK}
+	netmask ${ETH0_NETMASK}
 	broadcast ${ETH0_BROADCAST}
 	gateway ${ETH0_GATEWAY}
 "
