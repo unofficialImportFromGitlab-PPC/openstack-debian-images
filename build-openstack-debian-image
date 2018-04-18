@@ -203,7 +203,7 @@ for i in $@ ; do
 			usage
 		fi
 		REAL_HARDWARE=yes
-		DEST_HDD=vda
+		DEST_HDD=${2}
 		shift
 		shift
 	;;
