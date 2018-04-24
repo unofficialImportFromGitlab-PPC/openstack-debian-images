@@ -39,6 +39,7 @@ Options are:
  --reboot-after-install
  --install-nonfree-repo (installs contrib and non-free)
  --postinstall-packages <packages> (useful for non-free/contrib)
+ --security-mirror <security-mirror-url>
 For more info: man $0"
 	exit 1
 }
@@ -53,6 +54,7 @@ DEST_HDD=vda
 CLOUD_INIT=yes
 REBOOT_AFTER_INSTALL=no
 INSTALL_NONFREE_REPO=no
+SECURITY_MIRROR_URL=http://security.debian.org/debian-security
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -246,6 +248,12 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--security-mirror")
+		if [ -z "${2}" ] ; then
+			echo "No security mirror specified"
+			usage
+		fi
+		SECURITY_MIRROR_URL="${2}"
 	*)
 	;;
 	esac
@@ -621,8 +629,8 @@ deb-src ${SOURCE_LIST_MIRROR} ${RELEASE} main${NON_FREE}" >${MOUNT_DIR}/etc/apt/
 if [ "${RELEASE}" != "sid" ] && [ "${RELEASE}" != "unstable" ] ; then
 	echo "deb ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main${NON_FREE}
 deb-src ${SOURCE_LIST_MIRROR} ${RELEASE}-updates main${NON_FREE}
-deb http://security.debian.org/debian-security ${RELEASE}/updates main${NON_FREE}
-deb-src http://security.debian.org/debian-security ${RELEASE}/updates main${NON_FREE}
+deb ${SECURITY_MIRROR_URL} ${RELEASE}/updates main${NON_FREE}
+deb-src ${SECURITY_MIRROR_URL} ${RELEASE}/updates main${NON_FREE}
 " >>${MOUNT_DIR}/etc/apt/sources.list
 fi
 
