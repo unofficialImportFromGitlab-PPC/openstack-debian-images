@@ -886,5 +886,7 @@ if [ "${REAL_HARDWARE}" = "no" ] ; then
 fi
 
 if [ "${REBOOT_AFTER_INSTALL}" = "yes" ] ; then
+	echo "Rebooting computer in 5 seconds ..."
+	sleep 5
 	shutdown -r now
 fi
