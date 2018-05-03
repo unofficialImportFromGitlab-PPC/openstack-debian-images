@@ -1,4 +1,4 @@
-openstack-debian-images (1.26) UNRELEASED; urgency=medium
+openstack-debian-images (1.26) unstable; urgency=medium
 
   * Add the option to setup a real hardware without cloud-init. With this
     feature, one can run openstack-debian-images to install a standard Debian
