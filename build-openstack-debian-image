@@ -34,6 +34,7 @@ Options are:
  --dest-hdd <dest-hdd>
  --no-cloud-init
  --root-ssh-key <path-to-id_rsa.pub>
+ --permit-ssh-as-root
  --no-remove-host-keys (no effect if not generating a VM image using --dest-hdd)
  --hostname <hostname>
  --static-eth0 <CIDR-address>
@@ -57,6 +58,7 @@ REBOOT_AFTER_INSTALL=no
 INSTALL_NONFREE_REPO=no
 REMOVE_HOST_KEYS=yes
 SECURITY_MIRROR_URL=http://security.debian.org/debian-security
+PERMIT_SSH_AS_ROOT=no
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -194,6 +196,10 @@ for i in $@ ; do
 	;;
 	"--no-remove-host-keys")
 		REMOVE_HOST_KEYS=no
+		shift
+	;;
+	"--permit-ssh-as-root")
+		PERMIT_SSH_AS_ROOT=yes
 		shift
 	;;
 	"--output"|"-o")
@@ -563,6 +569,10 @@ fi
 
 if [ "${REAL_HARDWARE}" = "no" ] && [ "${REMOVE_HOST_KEYS}" = "yes" ] ; then
 	rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
+fi
+
+if [ "${PERMIT_SSH_AS_ROOT}" = "yes" ] ; then
+	sed -i 's|[#]*PermitRootLogin.*|PermitRootLogin yes|' ${MOUNT_DIR}/etc/ssh/sshd_config
 fi
 
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
