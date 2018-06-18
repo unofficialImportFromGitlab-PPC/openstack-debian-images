@@ -34,6 +34,7 @@ Options are:
  --dest-hdd <dest-hdd>
  --no-cloud-init
  --root-ssh-key <path-to-id_rsa.pub>
+ --no-remove-host-keys (no effect if not generating a VM image using --dest-hdd)
  --hostname <hostname>
  --static-eth0 <CIDR-address>
  --reboot-after-install
@@ -54,6 +55,7 @@ DEST_HDD=vda
 CLOUD_INIT=yes
 REBOOT_AFTER_INSTALL=no
 INSTALL_NONFREE_REPO=no
+REMOVE_HOST_KEYS=yes
 SECURITY_MIRROR_URL=http://security.debian.org/debian-security
 for i in $@ ; do
 	case "${1}" in
@@ -188,6 +190,10 @@ for i in $@ ; do
 		fi
 		ROOT_SSH_KEY=${2}
 		shift
+		shift
+	;;
+	"--no-remove-host-keys")
+		REMOVE_HOST_KEYS=no
 		shift
 	;;
 	"--output"|"-o")
@@ -555,7 +561,7 @@ if [ -e ${MOUNT_DIR}/etc/kbd/config ] ; then
 	sed -i 's/^[ \t#]KEYBOARD_DELAY=.*/KEYBOARD_DELAY=1000/' ${MOUNT_DIR}/etc/kbd/config
 fi
 
-if [ "${REAL_HARDWARE}" = "no" ] ; then
+if [ "${REAL_HARDWARE}" = "no" ] && [ "${REMOVE_HOST_KEYS}" = "yes" ] ; then
 	rm -f ${MOUNT_DIR}/etc/ssh/ssh_host_*
 fi
 
