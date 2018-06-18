@@ -18,6 +18,7 @@ Depends:
  e2fsprogs,
  extlinux [amd64],
  initramfs-tools,
+ ipcalc,
  kpartx,
  mbr [amd64],
  parted,
