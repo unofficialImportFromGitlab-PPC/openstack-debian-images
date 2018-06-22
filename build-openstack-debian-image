@@ -42,6 +42,7 @@ Options are:
  --install-nonfree-repo (installs contrib and non-free)
  --postinstall-packages <packages> (useful for non-free/contrib)
  --security-mirror <security-mirror-url>
+ --pre-reboot-hook <pre-reboot-script>
 For more info: man $0"
 	exit 1
 }
@@ -266,6 +267,15 @@ for i in $@ ; do
 			usage
 		fi
 		SECURITY_MIRROR_URL="${2}"
+		shift
+		shift
+	;;
+	"--pre-reboot-hook")
+		if [ -z "${2}" ] ; then
+			echo "No pre-reboot hook script specified"
+			usage
+		fi
+		PRE_REBOOT_HOOK_SCRIPT="${2}"
 		shift
 		shift
 	;;
@@ -902,6 +912,9 @@ if [ "${REAL_HARDWARE}" = "no" ] ; then
 fi
 
 if [ "${REBOOT_AFTER_INSTALL}" = "yes" ] ; then
+	if [ -x "${PRE_REBOOT_HOOK_SCRIPT}" ] ; then
+		${PRE_REBOOT_HOOK_SCRIPT}
+	fi
 	echo "Rebooting computer in 5 seconds ..."
 	sleep 5
 	shutdown -r now

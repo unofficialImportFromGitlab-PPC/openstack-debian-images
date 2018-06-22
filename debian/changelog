@@ -2,6 +2,7 @@ openstack-debian-images (1.28) UNRELEASED; urgency=medium
 
   * Add --no-remove-host-keys option.
   * Add --permit-ssh-as-root option.
+  * Add --pre-reboot-hook option.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 18 Jun 2018 16:08:57 +0200
 
