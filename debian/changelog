@@ -1,6 +1,7 @@
-openstack-debian-images (1.20) unstable; urgency=medium
+openstack-debian-images (1.20~deb9u1) stretch-proposed-updates; urgency=medium
 
   * Also add security updates for non wheezy/jessie.
+  * Update debian/gbp.conf to use debian/stretch as packaging branch.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 23 Jun 2017 17:02:30 +0200
 
