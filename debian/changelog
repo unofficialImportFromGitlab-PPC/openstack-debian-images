@@ -1,3 +1,10 @@
+openstack-debian-images (1.20~deb9u2) stretch; urgency=medium
+
+  * Set CloudStack after OpenStack in the datasource_list, to avoid a 120s
+    delay in cloud-init when booting a machine in an OpenStack cloud.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 29 Jun 2018 17:06:12 +0200
+
 openstack-debian-images (1.20~deb9u1) stretch-proposed-updates; urgency=medium
 
   * Also add security updates for non wheezy/jessie.
