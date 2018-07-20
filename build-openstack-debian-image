@@ -37,7 +37,16 @@ Options are:
  --permit-ssh-as-root
  --no-remove-host-keys (no effect if not generating a VM image using --dest-hdd)
  --hostname <hostname>
- --static-eth0 <CIDR-address>
+ --static-iface type=<normal,bond,bondvlan,bondvlanbridge>,iface0=eth0,addr=<CIDR-address>[,iface1=eth1][,vlannum=85][,bridgename=85] (can be specified multiple times)
+      type= Type of setup (ie: normal, bonding, binding with vlan, bonding with vlan and bridging)
+    iface0= Name of the first interface.
+    iface1= Name of the 2nd interface (only useful when using bridging)
+      addr= Ip address in CIDR format, eventually postfixed with :gateway
+   vlannum= Number of the vlan
+bridgename= Name of the bridge
+       dns= Address of the DNS servers, separated by :
+dns-search= Search namespace in resolv.conf
+       mtu= MTU for this network setup
  --reboot-after-install
  --install-nonfree-repo (installs contrib and non-free)
  --postinstall-packages <packages> (useful for non-free/contrib)
@@ -235,12 +244,16 @@ for i in $@ ; do
 		shift
 		shift
 	;;
-	"--static-eth0")
+	"--static-iface")
 		if [ -z "${2}" ] ; then
 			echo "No IP specified"
 			usage
 		fi
-		STATIC_ETH=${2}
+		if [ -z "${STATIC_ETH}" ] ; then
+			STATIC_ETH=${2}
+		else
+			STATIC_ETH="${STATIC_ETH} ${2}"
+		fi
 		shift
 		shift
 	;;
@@ -588,36 +601,205 @@ fi
 rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
 rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 
-# Setup networking (eg: DHCP by default)
-if [ -n "${STATIC_ETH}" ] ; then
-	ETH0_ADDR=$(echo ${STATIC_ETH} | cut -d/ -f1)
-	ETH0_NETWORK=$(ipcalc ${STATIC_ETH} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
-	ETH0_BROADCAST=$(ipcalc ${STATIC_ETH} | grep '^Broadcast:' | awk '{print $2}')
-	ETH0_NETMASK=$(ipcalc ${STATIC_ETH} | grep '^Netmask:' | awk '{print $2}')
-	ETH0_GATEWAY=$(ipcalc ${STATIC_ETH} | grep '^HostMin:' | awk '{print $2}')
-	ETH0_IFACE="auto eth0
-iface eth0 inet static
-	address ${ETH0_ADDR}
-	network ${ETH0_NETWORK}
-	netmask ${ETH0_NETMASK}
-	broadcast ${ETH0_BROADCAST}
-	gateway ${ETH0_GATEWAY}
-"
-else
-	ETH0_IFACE="allow-hotplug eth0
-iface eth0 inet dhcp
-"
-fi
+# Setup networking
+ENI=${MOUNT_DIR}/etc/network/interfaces
 
+
+# First, always add the loopback
 echo "# This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
 
 # The loopback network interface
 auto lo
 iface lo inet loopback
+" > ${ENI}
+if [ -n "${STATIC_ETH}" ] ; then
+	BOND_NUMBER=0
+	for i in ${STATIC_ETH} ; do
+		SE_TYPE=""
+		SE_IFACE0=""
+		SE_IFACE1=""
+		SE_ADDR=""
+		SE_GW=""
+		SE_VLANNUM=""
+		SE_BRNAME=""
+		SE_DNS=""
+		SE_DNSSEARCH=""
+		SE_MTU=""
+		ETH_PARAMS=$(echo ${i} | tr , " ")
+		for ETH_PARAM in ${ETH_PARAMS} ; do
+			ETH_PDIR=$(echo ${ETH_PARAM} | cut -d= -f1)
+			ETH_PVAL=$(echo ${ETH_PARAM} | cut -d= -f2)
+			case "${ETH_PDIR}" in
+			"type")
+				SE_TYPE=${ETH_PVAL}
+			;;
+			"iface0")
+				SE_IFACE0=${ETH_PVAL}
+			;;
+			"iface1")
+				SE_IFACE1=${ETH_PVAL}
+			;;
+			"addr")
+				SE_ADDR=$( echo ${ETH_PVAL} | cut -d: -f1)
+				SE_GW=$( echo ${ETH_PVAL} | cut -d: -f2)
+			;;
+			"vlannum")
+				SE_VLANNUM=${ETH_PVAL}
+			;;
+			"bridgename")
+				SE_BRNAME=${ETH_PVAL}
+			;;
+			"dns")
+				SE_DNS=${ETH_PVAL}
+				SE_ALL_NS=$(echo ${SE_DNS} | tr : " ")
+			;;
+			"dns-search")
+				SE_DNSSEARCH=${ETH_PVAL}
+			;;
+			"mtu")
+				SE_MTU=${ETH_PVAL}
+			;;
+			*)
+				echo "Unrecognized parameter"
+			;;
+			esac
+		done
+		IFACE_ADDR=$(echo ${SE_ADDR} | cut -d/ -f1)
+		IFACE_NETWORK=$(ipcalc ${SE_ADDR} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
+		IFACE_BROADCAST=$(ipcalc ${SE_ADDR} | grep '^Broadcast:' | awk '{print $2}')
+		IFACE_NETMASK=$(ipcalc ${SE_ADDR} | grep '^Netmask:' | awk '{print $2}')
 
-# The normal eth0
-${ETH0_IFACE}
+		case "${SE_TYPE}" in
+		"normal")
+			echo "# Interface ${INTERFACE}" >> ${ENI}
+			echo "allow-hotplug ${INTERFACE}" >> ${ENI}
+			echo "iface ${INTERFACE} inet static" >> ${ENI}
+			echo "	address ${IFACE_ADDR}" >> ${ENI}
+			echo "	network ${IFACE_NETWORK}" >> ${ENI}
+			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			if [ -n "${SE_GW}" ] ; then
+				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
+			if [ "${SE_MTU}" ] ; then
+				echo "	mtu ${SE_MTU}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNS}" ] ; then
+				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNSSEARCH}" ] ; then
+				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+			fi
+			echo "" >> ${ENI}
+		;;
+		"bond")
+			INTERFACE=bond${BOND_NUMBER}
+			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
+			# Iface 0
+			echo "# Interface ${SE_IFACE0}" >> ${ENI}
+			echo "auto ${SE_IFACE0}" >> ${ENI}
+			echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Iface 1
+			echo "# Interface ${SE_IFACE1}" >> ${ENI}
+			echo "auto ${SE_IFACE1}" >> ${ENI}
+			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Bridge
+			echo "# Interface ${INTERFACE}" >> ${ENI}
+			echo "auto ${INTERFACE}" >> ${ENI}
+			echo "iface ${INTERFACE} inet static" >> ${ENI}
+			echo "	address ${IFACE_ADDR}" >> ${ENI}
+			echo "	network ${IFACE_NETWORK}" >> ${ENI}
+			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			if [ -n "${SE_GW}" ] ; then
+				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
+			if [ "${SE_MTU}" ] ; then
+				echo "	mtu ${SE_MTU}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNS}" ] ; then
+				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNSSEARCH}" ] ; then
+				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+			fi
+			echo "	bond-mode 802.3ad" >> ${ENI}
+			echo "	bond-miimon 100" >> ${ENI}
+			echo "	bond-lacp-rate 1" >> ${ENI}
+			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			echo "" >> ${ENI}
+		;;
+		"bondvlanbridge")
+			INTERFACE=bond${BOND_NUMBER}
+			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
+			# Iface 0
+			echo "# Interface ${SE_IFACE0}" >> ${ENI}
+			echo "auto ${SE_IFACE0}" >> ${ENI}
+			echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Iface 1
+			echo "# Interface ${SE_IFACE1}" >> ${ENI}
+			echo "auto ${SE_IFACE1}" >> ${ENI}
+			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Bond iface
+			echo "# Interface ${INTERFACE}" >> ${ENI}
+			echo "auto ${INTERFACE}" >> ${ENI}
+			echo "iface ${INTERFACE} inet manual" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu ${SE_MTU}" >> ${ENI}
+			fi
+			echo "	bond-mode 802.3ad" >> ${ENI}
+			echo "	bond-miimon 100" >> ${ENI}
+			echo "	bond-lacp-rate 1" >> ${ENI}
+			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			echo "" >> ${ENI}
+			# Vlan
+			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
+			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
+			echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
+			echo "	vlan-raw-device bond0" >> ${ENI}
+			echo "" >> ${ENI}
+			# Bridge
+			echo "# Interface ${SE_BRNAME}" >> ${ENI}
+			echo "auto ${SE_BRNAME}" >> ${ENI}
+			echo "iface ${SE_BRNAME} inet static" >> ${ENI}
+			echo "	bridge_ports vlan${SE_VLANNUM}" >> ${ENI}
+			echo "	bridge_maxwait 0" >> ${ENI}
+			echo "	address ${IFACE_ADDR}" >> ${ENI}
+			echo "	network ${IFACE_NETWORK}" >> ${ENI}
+			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			if [ -n "${SE_GW}" ] ; then
+				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNS}" ] ; then
+				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNSSEARCH}" ] ; then
+				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+			fi
+			echo "" >> ${ENI}
+		;;
+		esac
+	done
+else
+# If no --static-iface param is set, then DHCP by default
+	echo "# The normal eth0
+allow-hotplug eth0
+iface eth0 inet dhcp
 
 # Additional interfaces, just in case we're using
 # multiple networks
@@ -630,7 +812,8 @@ iface eth2 inet dhcp
 # Set this one last, so that cloud-init or user can
 # override defaults.
 source /etc/network/interfaces.d/*
-" > ${MOUNT_DIR}/etc/network/interfaces
+" >> ${MOUNT_DIR}/etc/network/interfaces
+fi
 
 # Setup the default hostname (will be set by cloud-init at boot,
 # though for installing real hardware, we do care)
