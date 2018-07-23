@@ -3,7 +3,8 @@ Upstream-Name: openstack-debian-images
 Source: git://anonscm.debian.org/openstack/openstack-debian-images.git
 
 Files: *
-Copyright: (c) 2013, Thomas Goirand <zigo@debian.org>
+Copyright: (c) 2013-2018, Thomas Goirand <zigo@debian.org>
+           (c) 2018, Steve McIntyre <steve@einval.com>
 License: Apache-2
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
