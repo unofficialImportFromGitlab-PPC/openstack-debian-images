@@ -672,6 +672,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 
 		case "${SE_TYPE}" in
 		"normal")
+			INTERFACE=${SE_IFACE0}
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "allow-hotplug ${INTERFACE}" >> ${ENI}
 			echo "iface ${INTERFACE} inet static" >> ${ENI}
