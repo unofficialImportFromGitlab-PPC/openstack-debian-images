@@ -575,6 +575,7 @@ fi
 
 # We do it *after* the debootstrap, as otherwise it fails with
 # systemd-shim conflicting with systemd-sysv.
+chroot ${MOUNT_DIR} apt-get update
 chroot ${MOUNT_DIR} apt-get install -y locales-all libpam-systemd
 
 
