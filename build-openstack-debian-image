@@ -452,7 +452,7 @@ else # uefi
 			echo "It seems kpartx didn't mount the image correctly: exiting."
 			exit 1
 		fi
-		LOOP_DEVICE_ESP=$(kpartx -asv ${RAW_NAME} 2>&1 | head -1 | cut -d" " -f3)
+		LOOP_DEVICE_ESP="${LOOPRAW_DEVICE}"p1
 	fi
 fi
 
