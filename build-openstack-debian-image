@@ -484,6 +484,7 @@ trap "cleanup" EXIT TERM INT
 
 if [ "${REAL_HARDWARE}" = "no" ] ; then
 	DEST_PART=/dev/mapper/${LOOP_DEVICE}
+	DEST_PART_ESP=/dev/mapper/${LOOP_DEVICE_ESP}
 else
 	if [ "${BOOTTYPE}" = "mbr" ] ; then
 		DEST_PART=/dev/${DEST_HDD}1
@@ -503,7 +504,7 @@ MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
 
 mount ${DEST_PART} ${MOUNT_DIR}
 if [ "${BOOTTYPE}" = "uefi" ] ; then
-	mkfs.vfat -F ${DEST_PART_ESP}
+	mkfs.vfat ${DEST_PART_ESP}
 	UUID_ESP=$(blkid -o value -s UUID ${DEST_PART_ESP})
 	mkdir -p ${MOUNT_DIR}/boot/efi
 	mount ${DEST_PART_ESP} ${MOUNT_DIR}/boot/efi
