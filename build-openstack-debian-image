@@ -371,7 +371,13 @@ else
 	BOOT_MGR_PKG="extlinux"
 fi
 
-NEEDED_PACKAGES=sudo,adduser,locales,${BOOT_MGR_PKG},openssh-server,euca2ools,file,kbd,aptitude,file
+if echo "${STATIC_ETH}" | grep -q bond ; then
+	IFENSLAVE_PKG=",ifenslave"
+else
+	IFENSLAVE_PKG=",ifenslave"
+fi
+
+NEEDED_PACKAGES=sudo,adduser,locales,${BOOT_MGR_PKG},openssh-server,euca2ools,file,kbd,aptitude,file${IFENSLAVE_PKG}
 if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
