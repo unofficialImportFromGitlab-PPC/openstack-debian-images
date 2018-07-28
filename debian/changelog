@@ -5,6 +5,8 @@ openstack-debian-images (1.28) UNRELEASED; urgency=medium
   * Add --pre-reboot-hook option.
   * Add support for multiple --static-iface with eventually bonding, vlan and
     bridging.
+  * Add support for /puppet* files containing puppet client certificates on the
+    live image to be installed on target machine.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 18 Jun 2018 16:08:57 +0200
 

@@ -1021,6 +1021,40 @@ append ${KERNEL_PARAMS}" > ${MOUNT_DIR}/boot/extlinux/extlinux.conf
 	extlinux --install ${MOUNT_DIR}/boot/extlinux
 fi
 
+#########################################
+### Install puppet client certificate ###
+#########################################
+if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /puppet-ca.pem ] && [ -r /puppet-signed-cert.pem ] ; then
+	# Install puppet so we have the puppet:puppet user
+	chroot ${MOUNT_DIR} apt-get install -y puppet
+
+	# Private key
+	mkdir -p ${MOUNT_DIR}/var/lib/puppet/ssl/private_keys
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/private_keys
+	cp /puppet-private-key.pem ${MOUNT_DIR}/var/lib/puppet/ssl/private_keys/${HOSTNAME}.pem
+	chmod 640 ${MOUNT_DIR}/var/lib/puppet/ssl/private_keys/${HOSTNAME}.pem
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/private_keys/${HOSTNAME}.pem
+
+	# Public key
+	mkdir -p ${MOUNT_DIR}/var/lib/puppet/ssl/public_keys
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/public_keys
+	cp /puppet-public-key.pem ${MOUNT_DIR}/var/lib/puppet/ssl/public_keys/${HOSTNAME}.pem
+	chmod 644 ${MOUNT_DIR}/var/lib/puppet/ssl/public_keys/${HOSTNAME}.pem
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/public_keys/${HOSTNAME}.pem
+
+	# ca.pem + cert
+	mkdir -p ${MOUNT_DIR}/var/lib/puppet/ssl/certs
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/certs
+
+	cp /puppet-ca.pem ${MOUNT_DIR}/var/lib/puppet/ssl/certs/ca.pem
+	chmod 644 ${MOUNT_DIR}/var/lib/puppet/ssl/certs/ca.pem
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/certs/ca.pem
+
+	cp /puppet-signed-cert.pem ${MOUNT_DIR}/var/lib/puppet/ssl/certs/${HOSTNAME}.pem
+	chmod 644 ${MOUNT_DIR}/var/lib/puppet/ssl/certs/${HOSTNAME}.pem
+	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/certs/${HOSTNAME}.pem
+fi
+
 ###################
 ### HOOK SCRIPT ###
 ###################
