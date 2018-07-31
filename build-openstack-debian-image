@@ -1053,6 +1053,7 @@ if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /pupp
 	cp /puppet-signed-cert.pem ${MOUNT_DIR}/var/lib/puppet/ssl/certs/${HOSTNAME}.pem
 	chmod 644 ${MOUNT_DIR}/var/lib/puppet/ssl/certs/${HOSTNAME}.pem
 	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/certs/${HOSTNAME}.pem
+	touch ${MOUNT_DIR}/var/lib/oci-first-boot
 fi
 
 ###################
