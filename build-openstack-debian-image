@@ -20,8 +20,8 @@ Options are:
  --minimal|-m
  --azure|-az
  --boot-manager|-bm <grub|syslinux> (default: grub)
- --debootstrap-url|-u <debootstrap-mirror> (default: http://httpredir.debian.org/debian)
- --sources.list-mirror|-s <source-list-mirror> (default: http://httpredir.debian.org/debian)
+ --debootstrap-url|-u <debootstrap-mirror> (default: http://deb.debian.org/debian)
+ --sources.list-mirror|-s <source-list-mirror> (default: http://deb.debian.org/debian)
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>
  --image-size|-is <image-size> (default: 2G)
@@ -323,13 +323,13 @@ case "${RELEASE}" in
 esac
 
 if [ -z "${DEB_MIRROR}" ] ; then
-	DEB_MIRROR=http://httpredir.debian.org/debian
+	DEB_MIRROR=http://deb.debian.org/debian
 fi
 if [ -z "${EXTRA_PACKAGES}" ] ; then
 	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2,nano
 fi
 if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
-	SOURCE_LIST_MIRROR=http://httpredir.debian.org/debian
+	SOURCE_LIST_MIRROR=http://deb.debian.org/debian
 fi
 if [ -z "${IMAGE_SIZE}" ] ; then
 	IMAGE_SIZE=2
