@@ -1,5 +1,6 @@
 openstack-debian-images (1.28) unstable; urgency=medium
 
+  [ Thomas Goirand ]
   * Add --no-remove-host-keys option.
   * Add --permit-ssh-as-root option.
   * Add --pre-reboot-hook option.
@@ -9,6 +10,9 @@ openstack-debian-images (1.28) unstable; urgency=medium
     live image to be installed on target machine.
   * Install linux-image-cloud-amd64 if we're doing amd64.
   * Switch default to deb.debian.org instead of redir.debian.org.
+
+  [ Ondřej Nový ]
+  * d/control: Use team+openstack@tracker.debian.org as maintainer
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 03 Aug 2018 06:38:41 +0000
 
