@@ -918,7 +918,11 @@ chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
 ### Install a kernel ###
 ########################
 if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
-	KERNEL_PACKAGE_NAME=linux-image-cloud-${ARCH}
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		KERNEL_PACKAGE_NAME=linux-image-cloud-${ARCH}
+	else
+		KERNEL_PACKAGE_NAME=linux-image-${ARCH}
+	fi
 else
 	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
 fi
