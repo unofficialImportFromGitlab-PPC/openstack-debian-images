@@ -7,6 +7,7 @@ openstack-debian-images (1.28) UNRELEASED; urgency=medium
     bridging.
   * Add support for /puppet* files containing puppet client certificates on the
     live image to be installed on target machine.
+  * Install linux-image-cloud-amd64 if we're doing amd64.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 18 Jun 2018 16:08:57 +0200
 
