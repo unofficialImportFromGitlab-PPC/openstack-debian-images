@@ -1,3 +1,9 @@
+openstack-debian-images (1.29) UNRELEASED; urgency=medium
+
+  * Add explanation of the gateway parameter in the usage help.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 09 Aug 2018 11:35:12 +0200
+
 openstack-debian-images (1.28) unstable; urgency=medium
 
   [ Thomas Goirand ]
