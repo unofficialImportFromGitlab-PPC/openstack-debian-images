@@ -15,13 +15,13 @@ export LC_ALL
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye> [options]
+	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye|booksworm> [options]
 Options are:
  --minimal|-m
  --azure|-az
  --boot-manager|-bm <grub|syslinux> (default: grub)
- --debootstrap-url|-u <debootstrap-mirror> (default: http://httpredir.debian.org/debian)
- --sources.list-mirror|-s <source-list-mirror> (default: http://httpredir.debian.org/debian)
+ --debootstrap-url|-u <debootstrap-mirror> (default: http://deb.debian.org/debian)
+ --sources.list-mirror|-s <source-list-mirror> (default: http://deb.debian.org/debian)
  --extra-packages|-e <package>,<package>,...
  --hook-script|-hs <hook-script>
  --image-size|-is <image-size> (default: 2G)
@@ -168,7 +168,7 @@ for i in $@ ; do
 		shift
 	;;
 	"--release"|"-r")
-		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] || [ "${2}" = "bullseye" ] ; then
+		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] || [ "${2}" = "bullseye" ] || [ "${2}" = "booksworm" ] ; then
 			RELEASE=${2}
 			shift
 			shift
@@ -314,16 +314,22 @@ case "${RELEASE}" in
 	"buster")
 		RELEASE_NUM=10
 	;;
+	"bullseye")
+		RELEASE_NUM=11
+	;;
+	"booksworm")
+		RELEASE_NUM=12
+	;;
 esac
 
 if [ -z "${DEB_MIRROR}" ] ; then
-	DEB_MIRROR=http://httpredir.debian.org/debian
+	DEB_MIRROR=http://deb.debian.org/debian
 fi
 if [ -z "${EXTRA_PACKAGES}" ] ; then
 	EXTRA_PACKAGES=bash-completion,joe,most,screen,less,vim,bzip2,nano
 fi
 if [ -z "${SOURCE_LIST_MIRROR}" ] ; then
-	SOURCE_LIST_MIRROR=http://httpredir.debian.org/debian
+	SOURCE_LIST_MIRROR=http://deb.debian.org/debian
 fi
 if [ -z "${IMAGE_SIZE}" ] ; then
 	IMAGE_SIZE=2
@@ -908,6 +914,23 @@ fi
 # packages with new names, like kernels with a new ABI chroot
 chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
 
+########################
+### Install a kernel ###
+########################
+if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
+	if [ "${REAL_HARDWARE}" = "no" ] ; then
+		KERNEL_PACKAGE_NAME=linux-image-cloud-${ARCH}
+	else
+		KERNEL_PACKAGE_NAME=linux-image-${ARCH}
+	fi
+else
+	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
+fi
+chroot ${MOUNT_DIR} apt-get install -y ${KERNEL_PACKAGE_NAME}
+
+###########################################
+### Remove older releases of the kernel ###
+###########################################
 # Specifically remove all but the highest-versioned kernel
 # image. Let's not waste space on older kernels we won't use...
 OLD_KERNELS=$(COLUMNS=200 chroot ${MOUNT_DIR} dpkg -l | awk '/^ii  linux-image-[0-9]/ {print $2}' | sort -u | head -n -1)
@@ -933,8 +956,9 @@ Pin-Priority: 500
 EOF
 fi
 
-chroot ${MOUNT_DIR} apt-get install -y linux-image-${ARCH}
-
+##########################
+### Install cloud init ###
+##########################
 if [ "${CLOUD_INIT}" = "yes" ] ; then
 	if [ "${AZURE}" = "yes" ] ; then
 		echo "# to update this file, run dpkg-reconfigure cloud-init
