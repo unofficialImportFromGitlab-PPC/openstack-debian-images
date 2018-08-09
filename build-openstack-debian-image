@@ -1083,17 +1083,25 @@ fi
 ##############################################################################
 ### Install an eventual x509 PKI, used so OpenStack nodes trust each other ###
 ##############################################################################
+# These are the CA certificates
 if ls /oci-pki* >/dev/null 2>&1 ; then
 	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
 	cp /oci-pki* ${MOUNT_DIR}/etc/ssl/certs
 fi
-if [ -r "/${HOSTNAME}.key" ] ; then
+# These are the node's SSL keys
+if [ -r "/${HOSTNAME}.key" ] && [ -r "/${HOSTNAME}.crt" ] ; then
 	mkdir -p ${MOUNT_DIR}/etc/ssl/private/
 	cp /${HOSTNAME}.key ${MOUNT_DIR}/etc/ssl/private/ssl-cert-snakeoil.key
-fi
-if [ -r "/${HOSTNAME}.crt" ] ; then
 	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
 	cp /${HOSTNAME}.crt ${MOUNT_DIR}/etc/ssl/certs/ssl-cert-snakeoil.pem
+
+fi
+# These are the OpenStack public API SSL keys
+if [ -r /oci-pki-api.pem ] ; then
+	cp /oci-pki-api.pem ${MOUNT_DIR}/etc/ssl/certs/oci-pki-api.pem
+fi
+if [ -r /oci-pki-api.key ] ; then
+	cp /oci-pki-api.key ${MOUNT_DIR}/etc/ssl/private/oci-pki-api.key
 fi
 
 ###################
