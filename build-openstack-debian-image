@@ -1080,6 +1080,22 @@ if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /pupp
 	touch ${MOUNT_DIR}/var/lib/oci-first-boot
 fi
 
+##############################################################################
+### Install an eventual x509 PKI, used so OpenStack nodes trust each other ###
+##############################################################################
+if ls /oci-pki* >/dev/null 2>&1 ; then
+	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
+	cp /oci-pki* ${MOUNT_DIR}/etc/ssl/certs
+fi
+if [ -r "/${HOSTNAME}.key" ] ; then
+	mkdir -p ${MOUNT_DIR}/etc/ssl/private/
+	cp /${HOSTNAME}.key ${MOUNT_DIR}/etc/ssl/private/ssl-cert-snakeoil.key
+fi
+if [ -r "/${HOSTNAME}.crt" ] ; then
+	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
+	cp /${HOSTNAME}.crt ${MOUNT_DIR}/etc/ssl/certs/ssl-cert-snakeoil.pem
+fi
+
 ###################
 ### HOOK SCRIPT ###
 ###################
