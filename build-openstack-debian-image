@@ -37,7 +37,7 @@ Options are:
  --permit-ssh-as-root
  --no-remove-host-keys (no effect if not generating a VM image using --dest-hdd)
  --hostname <hostname>
- --static-iface type=<normal,bond,bondvlan,bondvlanbridge>,iface0=eth0,addr=<CIDR-address>[,iface1=eth1][,vlannum=85][,bridgename=85] (can be specified multiple times)
+ --static-iface type=<normal,bond,bondvlan,bondvlanbridge>,iface0=eth0,addr=<CIDR-address><:gateway>[,iface1=eth1][,vlannum=85][,bridgename=85] (can be specified multiple times)
       type= Type of setup (ie: normal, bonding, binding with vlan, bonding with vlan and bridging)
     iface0= Name of the first interface.
     iface1= Name of the 2nd interface (only useful when using bridging)
