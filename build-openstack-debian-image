@@ -1091,6 +1091,7 @@ fi
 if ls /oci-pki* >/dev/null 2>&1 ; then
 	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
 	cp /oci-pki* ${MOUNT_DIR}/etc/ssl/certs
+	chroot ${MOUNT_DIR} /usr/sbin/update-ca-certificates -f
 fi
 # These are the node's SSL keys
 if [ -r "/${HOSTNAME}.key" ] && [ -r "/${HOSTNAME}.crt" ] ; then
@@ -1098,11 +1099,13 @@ if [ -r "/${HOSTNAME}.key" ] && [ -r "/${HOSTNAME}.crt" ] ; then
 	cp /${HOSTNAME}.key ${MOUNT_DIR}/etc/ssl/private/ssl-cert-snakeoil.key
 	mkdir -p ${MOUNT_DIR}/etc/ssl/certs
 	cp /${HOSTNAME}.crt ${MOUNT_DIR}/etc/ssl/certs/ssl-cert-snakeoil.pem
-
+	chroot ${MOUNT_DIR} /usr/sbin/update-ca-certificates -f
 fi
+
 # These are the OpenStack public API SSL keys
 if [ -r /oci-pki-api.pem ] ; then
 	cp /oci-pki-api.pem ${MOUNT_DIR}/etc/ssl/certs/oci-pki-api.pem
+	chroot ${MOUNT_DIR} /usr/sbin/update-ca-certificates -f
 fi
 if [ -r /oci-pki-api.key ] ; then
 	cp /oci-pki-api.key ${MOUNT_DIR}/etc/ssl/private/oci-pki-api.key
