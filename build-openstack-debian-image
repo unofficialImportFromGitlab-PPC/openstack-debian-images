@@ -1078,6 +1078,10 @@ if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /pupp
 	chmod 644 ${MOUNT_DIR}/var/lib/puppet/ssl/certs/${HOSTNAME}.pem
 	chroot ${MOUNT_DIR} chown puppet:puppet /var/lib/puppet/ssl/certs/${HOSTNAME}.pem
 	touch ${MOUNT_DIR}/var/lib/oci-first-boot
+
+	# This is needed by puppet-openstack
+	mkdir -p ${MOUNT_DIR}/etc/facter/facts.d
+	echo "os_service_default=<SERVICE DEFAULT>" >${MOUNT_DIR}/etc/facter/facts.d/os_service_default.txt
 fi
 
 ##############################################################################
