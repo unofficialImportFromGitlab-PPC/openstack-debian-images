@@ -1103,8 +1103,12 @@ if [ -r "/${HOSTNAME}.key" ] && [ -r "/${HOSTNAME}.crt" ] ; then
 fi
 
 # These are the OpenStack public API SSL keys
+if [ -r /oci-pki-api.crt ] ; then
+	cp /oci-pki-api.crt ${MOUNT_DIR}/etc/ssl/certs/oci-pki-api.crt
+	chroot ${MOUNT_DIR} /usr/sbin/update-ca-certificates -f
+fi
 if [ -r /oci-pki-api.pem ] ; then
-	cp /oci-pki-api.pem ${MOUNT_DIR}/etc/ssl/certs/oci-pki-api.pem
+	cp /oci-pki-api.pem ${MOUNT_DIR}/etc/ssl/private/oci-pki-api.pem
 	chroot ${MOUNT_DIR} /usr/sbin/update-ca-certificates -f
 fi
 if [ -r /oci-pki-api.key ] ; then
