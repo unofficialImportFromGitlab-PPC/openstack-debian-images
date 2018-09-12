@@ -907,12 +907,12 @@ if [ "${AZURE}" = "yes" ] ; then
 fi
 
 if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
-	chroot ${MOUNT_DIR} DEBIAN_FRONTEND=noninteractive apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
+	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
 fi
 
 # Run dist-upgrade here - some security updates may involve installing
 # packages with new names, like kernels with a new ABI chroot
-chroot ${MOUNT_DIR} DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends dist-upgrade -y
+DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
 
 ########################
 ### Install a kernel ###
@@ -926,7 +926,7 @@ if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
 else
 	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
 fi
-chroot ${MOUNT_DIR} DEBIAN_FRONTEND=noninteractive apt-get install -y ${KERNEL_PACKAGE_NAME}
+DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y ${KERNEL_PACKAGE_NAME}
 
 ###########################################
 ### Remove older releases of the kernel ###
