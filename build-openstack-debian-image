@@ -588,7 +588,7 @@ fi
 # We do it *after* the debootstrap, as otherwise it fails with
 # systemd-shim conflicting with systemd-sysv.
 chroot ${MOUNT_DIR} apt-get update
-chroot ${MOUNT_DIR} apt-get install -y locales-all libpam-systemd
+chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" locales-all libpam-systemd
 
 
 # Turn off console blanking which is *very* annoying
@@ -902,17 +902,17 @@ fi
 
 chroot ${MOUNT_DIR} apt-get update
 if [ "${AZURE}" = "yes" ] ; then
-	chroot ${MOUNT_DIR} apt-get install -y debian-azure-archive-keyring unscd
+	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
 fi
 
 if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
-	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
+	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew"  $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
 fi
 
 # Run dist-upgrade here - some security updates may involve installing
 # packages with new names, like kernels with a new ABI chroot
-DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y
+DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y -o Dpkg::Options::="--force-confnew" 
 
 ########################
 ### Install a kernel ###
@@ -926,7 +926,7 @@ if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
 else
 	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
 fi
-DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y ${KERNEL_PACKAGE_NAME}
+DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" ${KERNEL_PACKAGE_NAME}
 
 ###########################################
 ### Remove older releases of the kernel ###
@@ -948,7 +948,7 @@ chroot ${MOUNT_DIR} apt-get autoremove -y
 # Setup cloud-init, cloud-utils and cloud-initramfs-growroot
 # These are only available from backports in Wheezy
 if [ "${RELEASE}" = "wheezy" ] ; then
-	chroot ${MOUNT_DIR} apt-get -t wheezy-backports install cloud-init cloud-utils cloud-initramfs-growroot -y
+	chroot ${MOUNT_DIR} apt-get -t wheezy-backports install -y -o Dpkg::Options::="--force-confnew" cloud-init cloud-utils cloud-initramfs-growroot
 	cat > ${MOUNT_DIR}/etc/apt/preferences.d/linux.pref <<EOF
 Package: linux-image-${ARCH} initramfs-tools
 Pin: release n=wheezy-backports
@@ -984,7 +984,7 @@ datasource_list: [ NoCloud, AltCloud, ConfigDrive, OpenStack, CloudStack, ${DIGI
 fi
 
 if [ "${AZURE}" = "yes" ] ; then
-	unshare --pid --fork --mount-proc chroot ${MOUNT_DIR} apt-get install -y waagent
+	unshare --pid --fork --mount-proc chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" waagent
 	rm -f ${MOUNT_DIR}/var/log/waagent.log
 fi
 
@@ -1050,7 +1050,7 @@ fi
 #########################################
 if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /puppet-ca.pem ] && [ -r /puppet-signed-cert.pem ] ; then
 	# Install puppet so we have the puppet:puppet user
-	chroot ${MOUNT_DIR} apt-get install -y puppet
+	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" puppet
 
 	# Private key
 	mkdir -p ${MOUNT_DIR}/var/lib/puppet/ssl/private_keys
