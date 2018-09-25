@@ -750,6 +750,57 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
 			echo "" >> ${ENI}
 		;;
+		"bondvlan")
+			INTERFACE=bond${BOND_NUMBER}
+			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
+			# Iface 0
+			echo "# Interface ${SE_IFACE0}" >> ${ENI}
+			echo "auto ${SE_IFACE0}" >> ${ENI}
+			echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Iface 1
+			echo "# Interface ${SE_IFACE1}" >> ${ENI}
+			echo "auto ${SE_IFACE1}" >> ${ENI}
+			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Bridge
+			echo "# Interface ${INTERFACE}" >> ${ENI}
+			echo "auto ${INTERFACE}" >> ${ENI}
+			echo "iface ${INTERFACE} inet static" >> ${ENI}
+			echo "	address ${IFACE_ADDR}" >> ${ENI}
+			echo "	network ${IFACE_NETWORK}" >> ${ENI}
+			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			if [ -n "${SE_GW}" ] ; then
+				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
+			if [ "${SE_MTU}" ] ; then
+				echo "	mtu ${SE_MTU}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNS}" ] ; then
+				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+			fi
+			if [ -n "${SE_DNSSEARCH}" ] ; then
+				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+			fi
+			echo "	bond-mode 802.3ad" >> ${ENI}
+			echo "	bond-miimon 100" >> ${ENI}
+			echo "	bond-lacp-rate 1" >> ${ENI}
+			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			echo "" >> ${ENI}
+			# Vlan
+			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
+			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
+			echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
+			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+		;;
 		"bondvlanbridge")
 			INTERFACE=bond${BOND_NUMBER}
 			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
@@ -785,7 +836,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
-			echo "	vlan-raw-device bond0" >> ${ENI}
+			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
 			echo "" >> ${ENI}
 			# Bridge
 			echo "# Interface ${SE_BRNAME}" >> ${ENI}
