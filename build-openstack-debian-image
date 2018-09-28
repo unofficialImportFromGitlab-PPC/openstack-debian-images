@@ -1197,6 +1197,24 @@ if [ -r /puppet-private-key.pem ] && [ -r /puppet-public-key.pem ] && [ -r /pupp
 	# This is needed by puppet-openstack
 	mkdir -p ${MOUNT_DIR}/etc/facter/facts.d
 	echo "os_service_default=<SERVICE DEFAULT>" >${MOUNT_DIR}/etc/facter/facts.d/os_service_default.txt
+
+	# We need puppet to start with OCI's generated root CA cert knowledge. That's the
+	# Environment=OS_CACERT=/etc/ssl/certs/oci-pki-oci-ca-chain.pem
+	# that will do this.
+	mkdir -p ${MOUNT_DIR}/etc/systemd/system
+	echo "[Unit]
+Description=Puppet agent
+Documentation=man:puppet-agent(8)
+
+[Service]
+Environment=OS_CACERT=/etc/ssl/certs/oci-pki-oci-ca-chain.pem
+Type=forking
+PIDFile=/run/puppet/agent.pid
+ExecStart=/usr/bin/puppet agent
+
+[Install]
+WantedBy=multi-user.target
+" >${MOUNT_DIR}/etc/systemd/system/puppet.service
 fi
 
 ##############################################################################
