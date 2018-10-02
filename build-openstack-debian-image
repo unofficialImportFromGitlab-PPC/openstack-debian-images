@@ -865,9 +865,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "auto ${INTERFACE}" >> ${ENI}
 			echo "iface ${INTERFACE} inet manual" >> ${ENI}
-			if [ -n "${SE_GW}" ] ; then
-				echo "	gateway ${SE_GW}" >> ${ENI}
-			fi
 			if [ "${SE_MTU}" ] ; then
 				echo "	mtu ${SE_MTU}" >> ${ENI}
 			fi
@@ -895,6 +892,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
 			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			if [ -n "${SE_GW}" ] ; then
+				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
 			echo "" >> ${ENI}
 		;;
 		"bondvlanbridge")
