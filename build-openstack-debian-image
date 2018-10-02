@@ -864,11 +864,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			# Bridge
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "auto ${INTERFACE}" >> ${ENI}
-			echo "iface ${INTERFACE} inet static" >> ${ENI}
-			echo "	address ${IFACE_ADDR}" >> ${ENI}
-			echo "	network ${IFACE_NETWORK}" >> ${ENI}
-			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
-			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+			echo "iface ${INTERFACE} inet manual" >> ${ENI}
 			if [ -n "${SE_GW}" ] ; then
 				echo "	gateway ${SE_GW}" >> ${ENI}
 			fi
@@ -890,11 +886,15 @@ if [ -n "${STATIC_ETH}" ] ; then
 			# Vlan
 			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
-			echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
+			echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+			echo "	address ${IFACE_ADDR}" >> ${ENI}
+			echo "	network ${IFACE_NETWORK}" >> ${ENI}
+			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
 			echo "" >> ${ENI}
 		;;
 		"bondvlanbridge")
