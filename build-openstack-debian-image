@@ -394,9 +394,9 @@ else
 fi
 
 if echo "${STATIC_ETH}" | grep -q bond ; then
-	IFENSLAVE_PKG=",ifenslave"
+	IFENSLAVE_PKG=",ifenslave,vlan"
 else
-	IFENSLAVE_PKG=",ifenslave"
+	IFENSLAVE_PKG=",ifenslave,vlan"
 fi
 
 NEEDED_PACKAGES=sudo,adduser,locales,${BOOT_MGR_PKG},openssh-server,euca2ools,file,kbd,aptitude,file${IFENSLAVE_PKG}
