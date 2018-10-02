@@ -706,8 +706,10 @@ if [ "${PERMIT_SSH_AS_ROOT}" = "yes" ] ; then
 	sed -i 's|[#]*PermitRootLogin.*|PermitRootLogin yes|' ${MOUNT_DIR}/etc/ssh/sshd_config
 fi
 
-rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
-rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	rm -f ${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
+	rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
+fi
 
 # Setup networking
 ENI=${MOUNT_DIR}/etc/network/interfaces
