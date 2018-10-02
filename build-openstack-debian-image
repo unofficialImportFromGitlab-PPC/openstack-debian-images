@@ -368,9 +368,13 @@ if [ "${ARCH}" = "arm64" ] ; then
 	fi
 fi
 
-CONSOLE=ttyS0
-if [ "${ARCH}" = "arm64" ] ; then
-	CONSOLE=ttyAMA0
+if [ -n "${SERIAL_CONSOLE_DEV}" ] ; then
+	CONSOLE=${SERIAL_CONSOLE_DEV}
+else
+	CONSOLE=ttyS0
+	if [ "${ARCH}" = "arm64" ] ; then
+		CONSOLE=ttyAMA0
+	fi
 fi
 
 if [ "${BOOTMANAGER}" = "grub" ] ; then
