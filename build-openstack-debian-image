@@ -653,6 +653,32 @@ WantedBy=getty.target
 	ln -s ../serial-getty@${SERIAL_CONSOLE_DEV}.service ${MOUNT_DIR}/etc/systemd/system/getty.target.wants/serial-getty@${SERIAL_CONSOLE_DEV}.service
 fi
 
+# If running on real hardware, hard-wire eth names in udev rules,
+# because they can change over time, especially since OCI potentially removes
+# some drivers from the initrd.
+if [ "${REAL_HARDWARE}" = "yes" ] ; then
+	mkdir -p ${MOUNT_DIR}/etc/udev/rules.d
+	echo "# Persistent-net rules written by openstack-debian-images" >${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
+	for i in $(ip link show | grep -v '^ ' | grep -v 'lo:' | cut -d' ' -f2 | cut -d: -f1) ; do
+	        MAC_ADDR=$(ip link show dev $i | grep 'link/ether' | awk '{print $2}')
+	        ETH_SPEED=$(( $(lshw -class network 2>/dev/null -json | jq '.[] | select(.serial|test("'${MAC_ADDR}'")) | .capacity') / 1000000))
+	        if [ "${ETH_SPEED}" = 10000 ] ; then
+			NICE_SPEED="10 Gbits/s"
+	        elif [ "${ETH_SPEED}" = 1000 ] ; then
+			NICE_SPEED="1 Gbits/s"
+	        elif [ "${ETH_SPEED}" = 100 ] ; then
+			NICE_SPEED="100 Mbits/s"
+	        elif [ "${ETH_SPEED}" = 10 ] ; then
+			NICE_SPEED="10 Mbits/s"
+	        else
+			NICE_SPEED="unrecognized speed"
+	        fi
+		echo "# ${i}: ${NICE_SPEED}
+"'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'${MAC_ADDR}'", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="${i}"'"
+">>${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
+	done
+fi
+
 # We do it *after* the debootstrap, as otherwise it fails with
 # systemd-shim conflicting with systemd-sysv.
 chroot ${MOUNT_DIR} apt-get update
