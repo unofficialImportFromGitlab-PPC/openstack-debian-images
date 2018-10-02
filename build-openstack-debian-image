@@ -674,7 +674,7 @@ if [ "${REAL_HARDWARE}" = "yes" ] ; then
 			NICE_SPEED="unrecognized speed"
 	        fi
 		echo "# ${i}: ${NICE_SPEED}
-"'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'${MAC_ADDR}'", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="${i}"'"
+"'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'${MAC_ADDR}'", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="'${i}'"'"
 ">>${MOUNT_DIR}/etc/udev/rules.d/70-persistent-net.rules
 	done
 fi
