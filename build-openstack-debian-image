@@ -895,6 +895,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
@@ -947,6 +949,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "iface ${SE_BRNAME} inet static" >> ${ENI}
 			echo "	bridge_ports vlan${SE_VLANNUM}" >> ${ENI}
 			echo "	bridge_maxwait 0" >> ${ENI}
+			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
