@@ -883,14 +883,14 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	bond-lacp-rate 1" >> ${ENI}
 			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
 			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
 			echo "" >> ${ENI}
 			# Vlan
 			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 			echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
-			if [ -n "${SE_MTU}" ] ; then
-				echo "	mtu 9000" >> ${ENI}
-			fi
 			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
@@ -900,6 +900,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
 			if [ -n "${SE_GW}" ] ; then
 				echo "	gateway ${SE_GW}" >> ${ENI}
+			fi
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "" >> ${ENI}
 		;;
@@ -927,12 +930,18 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	bond-lacp-rate 1" >> ${ENI}
 			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
 			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
 			echo "" >> ${ENI}
 			# Vlan
 			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 			echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
 			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
 			echo "" >> ${ENI}
 			# Bridge
 			echo "# Interface ${SE_BRNAME}" >> ${ENI}
@@ -942,9 +951,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	bridge_maxwait 0" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
-			if [ -n "${SE_MTU}" ] ; then
-				echo "	mtu 9000" >> ${ENI}
-			fi
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
@@ -957,6 +963,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			fi
 			if [ -n "${SE_DNSSEARCH}" ] ; then
 				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+			fi
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "" >> ${ENI}
 		;;
