@@ -872,9 +872,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "auto ${INTERFACE}" >> ${ENI}
 			echo "iface ${INTERFACE} inet manual" >> ${ENI}
-			if [ "${SE_MTU}" ] ; then
-				echo "	mtu ${SE_MTU}" >> ${ENI}
-			fi
 			if [ -n "${SE_DNS}" ] ; then
 				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
 			fi
@@ -925,9 +922,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "auto ${INTERFACE}" >> ${ENI}
 			echo "iface ${INTERFACE} inet manual" >> ${ENI}
-			if [ -n "${SE_MTU}" ] ; then
-				echo "	mtu ${SE_MTU}" >> ${ENI}
-			fi
 			echo "	bond-mode 802.3ad" >> ${ENI}
 			echo "	bond-miimon 100" >> ${ENI}
 			echo "	bond-lacp-rate 1" >> ${ENI}
@@ -938,9 +932,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 			echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
-			if [ -n "${SE_MTU}" ] ; then
-				echo "	mtu 9000" >> ${ENI}
-			fi
 			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
 			echo "" >> ${ENI}
 			# Bridge
@@ -951,6 +942,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "	bridge_maxwait 0" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
 			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				echo "	mtu 9000" >> ${ENI}
+			fi
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
