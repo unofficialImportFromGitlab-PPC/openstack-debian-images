@@ -53,6 +53,7 @@ dns-search= Search namespace in resolv.conf
  --security-mirror <security-mirror-url>
  --pre-reboot-hook <pre-reboot-script>
  --add-serial-getty <serial-console-dev>
+ --xfsformat <sda,sdb,...> will format /dev/sda and /dev/sdb in XFS (useful for Swift stores)
 For more info: man $0"
 	exit 1
 }
@@ -71,6 +72,7 @@ REMOVE_HOST_KEYS=yes
 SECURITY_MIRROR_URL=http://security.debian.org/debian-security
 PERMIT_SSH_AS_ROOT=no
 SERIAL_CONSOLE=no
+XFSFORMAT=""
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -301,6 +303,15 @@ for i in $@ ; do
 		fi
 		SERIAL_CONSOLE=yes
 		SERIAL_CONSOLE_DEV="${2}"
+		shift
+		shift
+	;;
+	"--xfsformat")
+		if [ -z "${2}" ] ; then
+			echo "No device specifed for --xfsformat."
+			usage
+		fi
+		XFSFORMAT="${2}"
 		shift
 		shift
 	;;
@@ -549,6 +560,18 @@ debootstrap --verbose \
 	--include=${PKG_LIST} \
 	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
 
+
+if [ -n "${XFSFORMAT}" ] ; then
+	XFS_HDDS=$(echo ${XFSFORMAT} | tr , " ")
+	for i in ${XFS_HDDS} ; do
+		if [ -x /sbin/mkfs.xfs ] ; then
+			echo "===> Formating /dev/${i}"
+			mkfs.xfs /dev/${i}
+		else
+			echo "===> Could not find mkfs.xfs, so wont format /dev/${i}"
+		fi
+	done
+fi
 
 ############################
 ### Customize the distro ###
