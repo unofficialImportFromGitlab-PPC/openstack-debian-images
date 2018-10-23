@@ -1,4 +1,4 @@
-openstack-debian-images (1.29) UNRELEASED; urgency=medium
+openstack-debian-images (1.29) unstable; urgency=medium
 
   * Add explanation of the gateway parameter in the usage help.
   * Install an eventual x509 PKI, used so OpenStack nodes trust each other.
