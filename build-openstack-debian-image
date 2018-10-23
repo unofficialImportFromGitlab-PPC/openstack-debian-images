@@ -6,6 +6,8 @@
 
 set -e
 
+export DEBIAN_FRONTEND=noninteractive
+
 if [ "$UNSHARED" != true ] ; then
 	exec env UNSHARED=true unshare --mount --pid --fork --mount-proc "$0" "$@"
 fi
@@ -15,7 +17,7 @@ export LC_ALL
 
 # Parse input parameters
 usage() {
-	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye|booksworm> [options]
+	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye|booksworm|sid> [options]
 Options are:
  --minimal|-m
  --azure|-az
@@ -172,7 +174,7 @@ for i in $@ ; do
 		shift
 	;;
 	"--release"|"-r")
-		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] || [ "${2}" = "bullseye" ] || [ "${2}" = "booksworm" ] ; then
+		if [ "${2}" = "wheezy" ] || [ "${2}" = "jessie" ] || [ "${2}" = "stretch" ] || [ "${2}" = "buster" ] || [ "${2}" = "bullseye" ] || [ "${2}" = "booksworm" ] || [ "${2}" = "sid" ] ; then
 			RELEASE=${2}
 			shift
 			shift
@@ -342,6 +344,9 @@ case "${RELEASE}" in
 	;;
 	"booksworm")
 		RELEASE_NUM=12
+	;;
+	"sid")
+		RELEASE_NUM=10
 	;;
 esac
 
@@ -1095,12 +1100,12 @@ if [ "${AZURE}" = "yes" ] ; then
 fi
 
 if [ -n "${POSTINSTALL_PACKAGES}" ] ; then
-	DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew"  $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
+	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew"  $(echo ${POSTINSTALL_PACKAGES} | tr "," " ")
 fi
 
 # Run dist-upgrade here - some security updates may involve installing
 # packages with new names, like kernels with a new ABI chroot
-DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y -o Dpkg::Options::="--force-confnew" 
+chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y -o Dpkg::Options::="--force-confnew" 
 
 ########################
 ### Install a kernel ###
@@ -1114,7 +1119,7 @@ if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
 else
 	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
 fi
-DEBIAN_FRONTEND=noninteractive chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" ${KERNEL_PACKAGE_NAME}
+chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" ${KERNEL_PACKAGE_NAME}
 
 ###########################################
 ### Remove older releases of the kernel ###
