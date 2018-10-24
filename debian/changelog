@@ -1,3 +1,9 @@
+openstack-debian-images (1.30) UNRELEASED; urgency=medium
+
+  * Add a --no-cloud-kernel option.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 24 Oct 2018 09:13:20 +0200
+
 openstack-debian-images (1.29) unstable; urgency=medium
 
   * Add explanation of the gateway parameter in the usage help.

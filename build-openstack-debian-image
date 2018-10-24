@@ -56,6 +56,7 @@ dns-search= Search namespace in resolv.conf
  --pre-reboot-hook <pre-reboot-script>
  --add-serial-getty <serial-console-dev>
  --xfsformat <sda,sdb,...> will format /dev/sda and /dev/sdb in XFS (useful for Swift stores)
+ --no-cloud-kernel
 For more info: man $0"
 	exit 1
 }
@@ -75,6 +76,7 @@ SECURITY_MIRROR_URL=http://security.debian.org/debian-security
 PERMIT_SSH_AS_ROOT=no
 SERIAL_CONSOLE=no
 XFSFORMAT=""
+CLOUD_KERNEL=yes
 for i in $@ ; do
 	case "${1}" in
 	"--extra-packages"|"-e")
@@ -315,6 +317,10 @@ for i in $@ ; do
 		fi
 		XFSFORMAT="${2}"
 		shift
+		shift
+	;;
+	"--no-cloud-kernel")
+		CLOUD_KERNEL=no
 		shift
 	;;
 	*)
@@ -1111,7 +1117,7 @@ chroot ${MOUNT_DIR} apt-get --no-install-recommends dist-upgrade -y -o Dpkg::Opt
 ### Install a kernel ###
 ########################
 if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
-	if [ "${REAL_HARDWARE}" = "no" ] ; then
+	if [ "${REAL_HARDWARE}" = "no" ] && [ "${CLOUD_KERNEL}" = "yes" ] ; then
 		KERNEL_PACKAGE_NAME=linux-image-cloud-${ARCH}
 	else
 		KERNEL_PACKAGE_NAME=linux-image-${ARCH}
