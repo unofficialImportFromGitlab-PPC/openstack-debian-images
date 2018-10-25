@@ -1,4 +1,4 @@
-openstack-debian-images (1.30) UNRELEASED; urgency=medium
+openstack-debian-images (1.30) unstable; urgency=medium
 
   * Add a --no-cloud-kernel option.
 
