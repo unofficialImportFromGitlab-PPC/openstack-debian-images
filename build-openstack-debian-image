@@ -56,6 +56,7 @@ dns-search= Search namespace in resolv.conf
  --pre-reboot-hook <pre-reboot-script>
  --add-serial-getty <serial-console-dev>
  --xfsformat <sda,sdb,...> will format /dev/sda and /dev/sdb in XFS (useful for Swift stores)
+ --vgcreate <sda,sdb,...> will prepare /dev/sda and /dev/sdb volume group (useful for Cinder LVM volume groups)
  --no-cloud-kernel
 For more info: man $0"
 	exit 1
@@ -316,6 +317,15 @@ for i in $@ ; do
 			usage
 		fi
 		XFSFORMAT="${2}"
+		shift
+		shift
+	;;
+	"--vgcreate")
+		if [ -z "${2}" ] ; then
+			echo "No device specifed for --vgcreate."
+			usage
+		fi
+		VGCREATE="${2}"
 		shift
 		shift
 	;;
@@ -582,6 +592,24 @@ if [ -n "${XFSFORMAT}" ] ; then
 			echo "===> Could not find mkfs.xfs, so wont format /dev/${i}"
 		fi
 	done
+fi
+
+if [ -n "${VGCREATE}" ] ; then
+	if [ -x /sbin/lvcreate ] ; then
+		VG_HDDS=$(echo ${VGCREATE} | tr , " ")
+		for i in ${VG_HDDS} ; do
+			echo "===> Creating PV for /dev/${i}"
+			pvcreate /dev/${i}
+		done
+		if [ -x /sbin/vgcreate ] ; then
+			vgcreate ocivg0 ${VG_HDDS}
+			vgchange -a y ocivg0
+		else
+			echo "===> Could not find vgcreate, so wont create volume groups."
+		fi
+	else
+		echo "===> Could not find pvcreate, so wont create volume groups."
+	fi
 fi
 
 ############################
