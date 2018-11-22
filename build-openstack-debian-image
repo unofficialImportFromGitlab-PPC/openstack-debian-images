@@ -597,12 +597,14 @@ fi
 if [ -n "${VGCREATE}" ] ; then
 	if [ -x /sbin/lvcreate ] ; then
 		VG_HDDS=$(echo ${VGCREATE} | tr , " ")
+		VG_DEVS=""
 		for i in ${VG_HDDS} ; do
 			echo "===> Creating PV for /dev/${i}"
 			pvcreate /dev/${i}
+			VG_DEVS="${VG_DEVS} /dev/${i}"
 		done
 		if [ -x /sbin/vgcreate ] ; then
-			vgcreate ocivg0 ${VG_HDDS}
+			vgcreate ocivg0 ${VG_DEVS}
 			vgchange -a y ocivg0
 		else
 			echo "===> Could not find vgcreate, so wont create volume groups."

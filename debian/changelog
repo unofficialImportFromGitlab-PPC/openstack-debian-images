@@ -1,3 +1,9 @@
+openstack-debian-images (1.32) unstable; urgency=medium
+
+  * Fix vgcreate call.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 22 Nov 2018 16:57:14 +0100
+
 openstack-debian-images (1.31) unstable; urgency=medium
 
   * Add a --vgcreate option, to prepare cinder-volume LVM setup.
