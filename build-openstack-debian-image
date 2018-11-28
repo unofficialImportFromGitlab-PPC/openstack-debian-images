@@ -587,7 +587,7 @@ if [ -n "${XFSFORMAT}" ] ; then
 	for i in ${XFS_HDDS} ; do
 		if [ -x /sbin/mkfs.xfs ] ; then
 			echo "===> Formating /dev/${i}"
-			mkfs.xfs /dev/${i}
+			mkfs.xfs -f /dev/${i}
 		else
 			echo "===> Could not find mkfs.xfs, so wont format /dev/${i}"
 		fi
@@ -600,7 +600,7 @@ if [ -n "${VGCREATE}" ] ; then
 		VG_DEVS=""
 		for i in ${VG_HDDS} ; do
 			echo "===> Creating PV for /dev/${i}"
-			pvcreate /dev/${i}
+			pvcreate -ff -y /dev/${i}
 			VG_DEVS="${VG_DEVS} /dev/${i}"
 		done
 		if [ -x /sbin/vgcreate ] ; then
