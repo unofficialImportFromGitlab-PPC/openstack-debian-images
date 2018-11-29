@@ -1,3 +1,9 @@
+openstack-debian-images (1.33) unstable; urgency=medium
+
+  * Add -f flag to mkfs.xfs.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 29 Nov 2018 11:28:56 +0100
+
 openstack-debian-images (1.32) unstable; urgency=medium
 
   * Fix vgcreate call.
