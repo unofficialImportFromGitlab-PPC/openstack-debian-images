@@ -674,7 +674,7 @@ fi
 
 if [ "${SERIAL_CONSOLE}" = "yes" ] ; then
 	PROC_MANUFACTURER=$(dmidecode -s processor-manufacturer | head -n 1)
-	if [ "${REAL_HARDWARE}" = "yes" && [ "${PROC_MANUFACTURER}" = "QEMU" ] ; then
+	if [ "${REAL_HARDWARE}" = "yes" ] && [ "${PROC_MANUFACTURER}" = "QEMU" ] ; then
 		echo "Probably setting-up on a virtualized OCI PoC: will not setup getty on ttyS1."
 	else
 		mkdir -p ${MOUNT_DIR}/etc/systemd/system/getty.target.wants
