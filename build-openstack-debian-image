@@ -1250,6 +1250,13 @@ if [ "${BOOTMANAGER}" = "grub" ] ; then
 # openstack-debian-images disables OS prober to avoid
 # loopback detection which breaks booting
 GRUB_DISABLE_OS_PROBER=true" >>${MOUNT_DIR}/etc/default/grub
+
+	if [ "${SERIAL_CONSOLE}" = "yes" ] ; then
+		echo "GRUB_TERMINAL=serial
+GRUB_SERIAL_COMMAND=\"serial --unit=1 --speed=115200 --word=8 --parity=no --stop=1\"
+" >>${MOUNT_DIR}/etc/default/grub
+	fi
+
 	# Tell grub about our loopback devices first
 	mkdir -p ${MOUNT_DIR}/boot/grub
 	mount --bind /dev ${MOUNT_DIR}/dev
