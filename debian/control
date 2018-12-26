@@ -11,7 +11,7 @@ Vcs-Browser: https://salsa.debian.org/openstack-team/debian/openstack-debian-ima
 Vcs-Git: https://salsa.debian.org/openstack-team/debian/openstack-debian-images.git
 
 Package: openstack-debian-images
-Architecture: amd64 arm64
+Architecture: amd64 arm64 i386 ppc64el
 Depends:
  debootstrap,
  dosfstools,

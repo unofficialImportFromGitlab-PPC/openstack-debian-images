@@ -1,10 +1,11 @@
-openstack-debian-images (1.34) UNRELEASED; urgency=medium
+openstack-debian-images (1.34) unstable; urgency=high
 
   * Do not setup serial-getty@ttyS1 if installing on bare metal, but running on
     QEMU. This is to avoid annoyances when running OCI's PoC mode.
   * Also configure grub's serial console if setting-up with serial.
+  * Add i386 and ppc64el as possible arch.
 
- -- Thomas Goirand <zigo@debian.org>  Mon, 03 Dec 2018 16:31:38 +0100
+ -- Thomas Goirand <zigo@debian.org>  Wed, 26 Dec 2018 09:46:44 +0100
 
 openstack-debian-images (1.33) unstable; urgency=medium
 
