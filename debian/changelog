@@ -1,3 +1,10 @@
+openstack-debian-images (1.35) UNRELEASED; urgency=medium
+
+  * Add ovsbr= option when setting-up network interfaces, so it is possible to
+    configure an interface with OVS.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 16 Jan 2019 10:08:39 +0100
+
 openstack-debian-images (1.34) unstable; urgency=high
 
   * Do not setup serial-getty@ttyS1 if installing on bare metal, but running on

@@ -49,6 +49,7 @@ bridgename= Name of the bridge
        dns= Address of the DNS servers, separated by :
 dns-search= Search namespace in resolv.conf
        mtu= MTU for this network setup
+     ovsbr= Name of the OVS bridge to use
  --reboot-after-install
  --install-nonfree-repo (installs contrib and non-free)
  --postinstall-packages <packages> (useful for non-free/contrib)
@@ -812,6 +813,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 		SE_DNS=""
 		SE_DNSSEARCH=""
 		SE_MTU=""
+		SE_OVSBR=""
 		ETH_PARAMS=$(echo ${i} | tr , " ")
 		for ETH_PARAM in ${ETH_PARAMS} ; do
 			ETH_PDIR=$(echo ${ETH_PARAM} | cut -d= -f1)
@@ -846,6 +848,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			"mtu")
 				SE_MTU=${ETH_PVAL}
 			;;
+			"ovsbr")
+				SE_OVSBR=${ETH_PVAL}
+			;;
 			*)
 				echo "Unrecognized parameter"
 			;;
@@ -858,10 +863,20 @@ if [ -n "${STATIC_ETH}" ] ; then
 
 		case "${SE_TYPE}" in
 		"normal")
-			INTERFACE=${SE_IFACE0}
-			echo "# Interface ${INTERFACE}" >> ${ENI}
-			echo "allow-hotplug ${INTERFACE}" >> ${ENI}
+			if [ -n "${SE_OVSBR}" ] ; then
+				INTERFACE=${SE_OVSBR}
+				echo "# Interface ${SE_OVSBR}" >> ${ENI}
+				echo "allow-ovs ${SE_OVSBR}" >> ${ENI}
+			else
+				INTERFACE=${SE_IFACE0}
+				echo "# Interface ${INTERFACE}" >> ${ENI}
+				echo "allow-hotplug ${INTERFACE}" >> ${ENI}
+			fi
 			echo "iface ${INTERFACE} inet static" >> ${ENI}
+			if [ -n "${SE_OVSBR}" ] ; then
+				echo "	ovs_type OVSBridge" >> ${ENI}
+				echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
+			fi
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
@@ -879,6 +894,13 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
 			fi
 			echo "" >> ${ENI}
+			if [ -n "${SE_OVSBR}" ] ; then
+				echo "allow-${SE_OVSBR} ${SE_IFACE0}" >> ${ENI}
+				echo "iface ${SE_IFACE0} inet manual"
+				echo "	ovs_bridge ${SE_OVSBR}"
+				echo "	ovs_type OVSPort"
+				echo "" >> ${ENI}
+			fi
 		;;
 		"bond")
 			INTERFACE=bond${BOND_NUMBER}
