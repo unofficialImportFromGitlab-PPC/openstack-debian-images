@@ -1,4 +1,4 @@
-openstack-debian-images (1.35) UNRELEASED; urgency=medium
+openstack-debian-images (1.35) unstable; urgency=medium
 
   * Add ovsbr= option when setting-up network interfaces, so it is possible to
     configure an interface with OVS.
