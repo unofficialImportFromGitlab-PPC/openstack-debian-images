@@ -947,6 +947,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 		"bondvlan")
 			INTERFACE=bond${BOND_NUMBER}
 			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
+
 			# Iface 0
 			echo "# Interface ${SE_IFACE0}" >> ${ENI}
 			echo "auto ${SE_IFACE0}" >> ${ENI}
@@ -959,7 +960,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
 			echo "	bond-master ${INTERFACE}" >> ${ENI}
 			echo "" >> ${ENI}
-			# Bridge
+
+			# Bonding interface
 			echo "# Interface ${INTERFACE}" >> ${ENI}
 			echo "auto ${INTERFACE}" >> ${ENI}
 			echo "iface ${INTERFACE} inet manual" >> ${ENI}
@@ -978,13 +980,21 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "" >> ${ENI}
-			# Vlan
-			echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
-			echo "auto vlan${SE_VLANNUM}" >> ${ENI}
-			echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
-			echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
-			echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
-			echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
+
+			# Eventual OVS bridge, plus vlan device using the bond interface
+			if [ -n "${SE_OVSBR}" ] ; then
+                                echo "# Interface ${SE_OVSBR}" >> ${ENI}
+                                echo "allow-ovs ${SE_OVSBR}" >> ${ENI}
+				echo "iface ${INTERFACE} inet static" >> ${ENI}
+			else
+				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
+				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
+				echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
+				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+				echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+				echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
+			fi
+
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
 			echo "	network ${IFACE_NETWORK}" >> ${ENI}
 			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
@@ -994,6 +1004,15 @@ if [ -n "${STATIC_ETH}" ] ; then
 			fi
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
+			fi
+
+			if [ -n "${SE_OVSBR}" ] ; then
+				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
+				echo "allow-${SE_OVSBR} vlan${SE_VLANNUM}" >> ${ENI}
+				echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
+				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+				echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+				echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
 			fi
 			echo "" >> ${ENI}
 		;;
