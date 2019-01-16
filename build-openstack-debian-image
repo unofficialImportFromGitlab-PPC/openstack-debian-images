@@ -896,9 +896,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "" >> ${ENI}
 			if [ -n "${SE_OVSBR}" ] ; then
 				echo "allow-${SE_OVSBR} ${SE_IFACE0}" >> ${ENI}
-				echo "iface ${SE_IFACE0} inet manual"
-				echo "	ovs_bridge ${SE_OVSBR}"
-				echo "	ovs_type OVSPort"
+				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+				echo "	ovs_bridge ${SE_OVSBR}" >> ${ENI}
+				echo "	ovs_type OVSPort" >> ${ENI}
 				echo "" >> ${ENI}
 			fi
 		;;
