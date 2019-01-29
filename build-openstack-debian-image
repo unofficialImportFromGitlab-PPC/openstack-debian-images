@@ -1005,7 +1005,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
-			echo "" >${ENI}
+			echo "" >>${ENI}
 
 			if [ -n "${SE_OVSBR}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
@@ -1285,7 +1285,7 @@ mkdir -p ${MOUNT_DIR}/boot/extlinux
 if [ "${RELEASE}" = "wheezy" ] ; then
 	append="rootdelay=30"
 fi
-KERNEL_PARAMS="biosdevname=0 net.ifnames=0 console=tty0 console=$CONSOLE,115200 earlyprintk=$CONSOLE,115200 consoleblank=0 systemd.show_status=true $append"
+KERNEL_PARAMS="nosplash text biosdevname=0 net.ifnames=0 console=tty0 console=$CONSOLE,115200 earlyprintk=$CONSOLE,115200 consoleblank=0 systemd.show_status=true $append"
 if [ "${BOOTMANAGER}" = "grub" ] ; then
 	sed -i -e 's|^[ #\t]*GRUB_CMDLINE_LINUX_DEFAULT[ #\t]*=.*|GRUB_CMDLINE_LINUX_DEFAULT="'"${KERNEL_PARAMS}"'"|' ${MOUNT_DIR}/etc/default/grub
 	echo "
