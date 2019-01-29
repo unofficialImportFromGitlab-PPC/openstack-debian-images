@@ -1009,7 +1009,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 
 			if [ -n "${SE_OVSBR}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
-				echo "allow-${SE_OVSBR} vlan${SE_VLANNUM}" >> ${ENI}
+				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 				echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
 				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
 				echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
