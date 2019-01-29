@@ -985,7 +985,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_OVSBR}" ] ; then
                                 echo "# Interface ${SE_OVSBR}" >> ${ENI}
                                 echo "allow-ovs ${SE_OVSBR}" >> ${ENI}
-				echo "iface ${INTERFACE} inet static" >> ${ENI}
+				echo "iface ${SE_OVSBR} inet static" >> ${ENI}
 			else
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
@@ -1005,12 +1005,13 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
+			echo "" >${ENI}
 
 			if [ -n "${SE_OVSBR}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 				echo "allow-${SE_OVSBR} vlan${SE_VLANNUM}" >> ${ENI}
 				echo "iface vlan${SE_VLANNUM} inet manual" >> ${ENI}
-				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+				echo "	vlan-raw-device ${SE_OVSBR}" >> ${ENI}
 				echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
 				echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
 			fi
