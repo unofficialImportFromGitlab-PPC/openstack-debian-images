@@ -969,33 +969,17 @@ if [ -n "${STATIC_ETH}" ] ; then
 			INTERFACE=bond${BOND_NUMBER}
 			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
 
-			if [ -n "${SE_EXTRA_OVS}" ] ; then
-				# Iface 0
-				echo "# Interface ${SE_IFACE0}" >> ${ENI}
-				echo "auto ${SE_IFACE0}" >> ${ENI}
-				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
-				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
-				echo "	ovs_type OVSPort" >> ${ENI}
-				echo "" >> ${ENI}
-				# Iface 1
-				echo "# Interface ${SE_IFACE1}" >> ${ENI}
-				echo "auto ${SE_IFACE1}" >> ${ENI}
-				echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
-				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
-				echo "	ovs_type OVSPort" >> ${ENI}
-			else
-				# Iface 0
-				echo "# Interface ${SE_IFACE0}" >> ${ENI}
-				echo "auto ${SE_IFACE0}" >> ${ENI}
-				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
-				echo "	bond-master ${INTERFACE}" >> ${ENI}
-				echo "" >> ${ENI}
-				# Iface 1
-				echo "# Interface ${SE_IFACE1}" >> ${ENI}
-				echo "auto ${SE_IFACE1}" >> ${ENI}
-				echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
-				echo "	bond-master ${INTERFACE}" >> ${ENI}
-			fi
+			# Iface 0
+			echo "# Interface ${SE_IFACE0}" >> ${ENI}
+			echo "auto ${SE_IFACE0}" >> ${ENI}
+			echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			echo "" >> ${ENI}
+			# Iface 1
+			echo "# Interface ${SE_IFACE1}" >> ${ENI}
+			echo "auto ${SE_IFACE1}" >> ${ENI}
+			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
+			echo "	bond-master ${INTERFACE}" >> ${ENI}
 			echo "" >> ${ENI}
 
 			# Bonding interface
@@ -1008,17 +992,13 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_DNSSEARCH}" ] ; then
 				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
 			fi
+			echo "	bond-mode 802.3ad" >> ${ENI}
+			echo "	bond-miimon 100" >> ${ENI}
+			echo "	bond-lacp-rate 1" >> ${ENI}
+			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
 			if [ "${SE_EXTRA_OVS}" = "yes" ] ; then
-				echo "	ovs_bridge br-ex" >> ${ENI}
-				echo "	ovs_type OVSBond" >> ${ENI}
-				echo "	ovs_bonds ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
-				echo "	ovs_options lacp=active" >> ${ENI}
-			else
-				echo "	bond-mode 802.3ad" >> ${ENI}
-				echo "	bond-miimon 100" >> ${ENI}
-				echo "	bond-lacp-rate 1" >> ${ENI}
-				echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
-				echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+				echo "	up ifup br-ex" >> ${ENI}
 			fi
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
@@ -1073,6 +1053,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 					echo "iface br-ex inet manual" >> ${ENI}
 					echo "	ovs_type OVSBridge" >> ${ENI}
 					echo "	ovs_ports ${INTERFACE}" >> ${ENI}
+					echo "	up ovs-vsctl add-port br-ex ${INTERFACE}" >> ${ENI}
 					echo "" >> ${ENI}
 				fi
 			fi
