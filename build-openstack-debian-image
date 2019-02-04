@@ -40,16 +40,19 @@ Options are:
  --no-remove-host-keys (no effect if not generating a VM image using --dest-hdd)
  --hostname <hostname>
  --static-iface type=<normal,bond,bondvlan,bondvlanbridge>,iface0=eth0,addr=<CIDR-address><:gateway>[,iface1=eth1][,vlannum=85][,bridgename=br85] (can be specified multiple times)
-      type= Type of setup (ie: normal, bonding, binding with vlan, bonding with vlan and bridging)
-    iface0= Name of the first interface.
-    iface1= Name of the 2nd interface (only useful when using bridging)
-      addr= Ip address in CIDR format, eventually postfixed with :gateway
-   vlannum= Number of the vlan
-bridgename= Name of the bridge
-       dns= Address of the DNS servers, separated by :
-dns-search= Search namespace in resolv.conf
-       mtu= MTU for this network setup
-     ovsbr= Name of the OVS bridge to use
+       type= Type of setup (ie: normal, bonding, binding with vlan, bonding with vlan and bridging)
+     iface0= Name of the first interface.
+     iface1= Name of the 2nd interface (only useful when using bridging)
+       addr= Ip address in CIDR format, eventually postfixed with :gateway
+    vlannum= Number of the vlan
+ bridgename= Name of the bridge
+        dns= Address of the DNS servers, separated by :
+ dns-search= Search namespace in resolv.conf
+        mtu= MTU for this network setup
+      ovsbr= Name of the OVS bridge to use
+ vmnet_addr= IP address of the VM trafic network
+ vmnet_vlan= Number of the vlan for the VM trafic network
+  extra_ovs=yes will Bridge a br-ex to the iface / bond
  --reboot-after-install
  --install-nonfree-repo (installs contrib and non-free)
  --postinstall-packages <packages> (useful for non-free/contrib)
@@ -814,6 +817,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 		SE_DNSSEARCH=""
 		SE_MTU=""
 		SE_OVSBR=""
+		SE_VMNET_ADDR=""
+		SE_VMNET_VLAN=""
+		SE_EXTRA_OVS="no"
 		ETH_PARAMS=$(echo ${i} | tr , " ")
 		for ETH_PARAM in ${ETH_PARAMS} ; do
 			ETH_PDIR=$(echo ${ETH_PARAM} | cut -d= -f1)
@@ -851,6 +857,15 @@ if [ -n "${STATIC_ETH}" ] ; then
 			"ovsbr")
 				SE_OVSBR=${ETH_PVAL}
 			;;
+			"vmnet_addr")
+				SE_VMNET_ADDR=${ETH_PVAL}
+			;;
+			"vmnet_vlan")
+				SE_VMNET_VLAN=${ETH_PVAL}
+			;;
+			"extra_ovs")
+				SE_EXTRA_OVS="yes"
+			;;
 			*)
 				echo "Unrecognized parameter"
 			;;
@@ -860,6 +875,12 @@ if [ -n "${STATIC_ETH}" ] ; then
 		IFACE_NETWORK=$(ipcalc ${SE_ADDR} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
 		IFACE_BROADCAST=$(ipcalc ${SE_ADDR} | grep '^Broadcast:' | awk '{print $2}')
 		IFACE_NETMASK=$(ipcalc ${SE_ADDR} | grep '^Netmask:' | awk '{print $2}')
+		if [ -n "${SE_VMNET_ADDR}" ] ; then
+			VMNET_IFACE_ADDR=$(echo ${SE_VMNET_ADDR} | cut -d/ -f1)
+			VMNET_IFACE_NETWORK=$(ipcalc ${SE_VMNET_ADDR} | grep '^Network:' | awk '{print $2}' | cut -d/ -f1)
+			VMNET_IFACE_BROADCAST=$(ipcalc ${SE_VMNET_ADDR} | grep '^Broadcast:' | awk '{print $2}')
+			VMNET_IFACE_NETMASK=$(ipcalc ${SE_VMNET_ADDR} | grep '^Netmask:' | awk '{print $2}')
+		fi
 
 		case "${SE_TYPE}" in
 		"normal")
@@ -948,17 +969,31 @@ if [ -n "${STATIC_ETH}" ] ; then
 			INTERFACE=bond${BOND_NUMBER}
 			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
 
-			# Iface 0
-			echo "# Interface ${SE_IFACE0}" >> ${ENI}
-			echo "auto ${SE_IFACE0}" >> ${ENI}
-			echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
-			echo "	bond-master ${INTERFACE}" >> ${ENI}
-			echo "" >> ${ENI}
-			# Iface 1
-			echo "# Interface ${SE_IFACE1}" >> ${ENI}
-			echo "auto ${SE_IFACE1}" >> ${ENI}
-			echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
-			echo "	bond-master ${INTERFACE}" >> ${ENI}
+			if [ -n "${SE_MTU}" ] ; then
+				# Iface 0
+				echo "# Interface ${SE_IFACE0}" >> ${ENI}
+				echo "auto ${SE_IFACE0}" >> ${ENI}
+				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
+				echo "	ovs_type OVSPort" >> ${ENI}
+				echo "" >> ${ENI}
+				# Iface 1
+				echo "# Interface ${SE_IFACE1}" >> ${ENI}
+				echo "auto ${SE_IFACE1}" >> ${ENI}
+				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
+				echo "	ovs_type OVSPort" >> ${ENI}
+			else
+				# Iface 0
+				echo "# Interface ${SE_IFACE0}" >> ${ENI}
+				echo "auto ${SE_IFACE0}" >> ${ENI}
+				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+				echo "	bond-master ${INTERFACE}" >> ${ENI}
+				echo "" >> ${ENI}
+				# Iface 1
+				echo "# Interface ${SE_IFACE1}" >> ${ENI}
+				echo "auto ${SE_IFACE1}" >> ${ENI}
+				echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
+				echo "	bond-master ${INTERFACE}" >> ${ENI}
+			fi
 			echo "" >> ${ENI}
 
 			# Bonding interface
@@ -971,11 +1006,18 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_DNSSEARCH}" ] ; then
 				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
 			fi
-			echo "	bond-mode 802.3ad" >> ${ENI}
-			echo "	bond-miimon 100" >> ${ENI}
-			echo "	bond-lacp-rate 1" >> ${ENI}
-			echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
-			echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			if [ "${extra_ovs}" = "yes" ] ; then
+				echo "	ovs_bridge br-ex" >> ${ENI}
+				echo "	ovs_type OVSBond" >> ${ENI}
+				echo "	ovs_bonds ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+				echo "	ovs_options lacp=active" >> ${ENI}
+			else
+				echo "	bond-mode 802.3ad" >> ${ENI}
+				echo "	bond-miimon 100" >> ${ENI}
+				echo "	bond-lacp-rate 1" >> ${ENI}
+				echo "	bond-slaves ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
+				echo "	bond_xmit_hash_policy layer3+4" >> ${ENI}
+			fi
 			if [ -n "${SE_MTU}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
@@ -991,8 +1033,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 				echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
 				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
-				echo "  pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
-				echo "  pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
+				echo "	pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+				echo "	pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
 			fi
 
 			echo "	address ${IFACE_ADDR}" >> ${ENI}
@@ -1006,6 +1048,32 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "	mtu 9000" >> ${ENI}
 			fi
 			echo "" >>${ENI}
+
+
+			if [ -n "${vmnet_addr}" ] ; then
+				echo "# Interface vlan${SE_VLANNUM}:1" >> ${ENI}
+				echo "auto vlan${SE_VLANNUM}:1" >> ${ENI}
+				echo "iface vlan${SE_VLANNUM}:1 inet static" >> ${ENI}
+				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
+				echo "	pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
+				echo "	pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
+				echo "	address ${VMNET_IFACE_ADDR}" >> ${ENI}
+				echo "	network ${VMNET_IFACE_NETWORK}" >> ${ENI}
+				echo "	netmask ${VMNET_IFACE_NETMASK}" >> ${ENI}
+				echo "	broadcast ${VMNET_IFACE_BROADCAST}" >> ${ENI}
+				if [ -n "${SE_MTU}" ] ; then
+					echo "	mtu 9000" >> ${ENI}
+				fi
+				echo "" >>${ENI}
+
+				if [ "${extra_ovs}" = "yes" ] ; then
+	                                echo "allow-ovs br-ex" >> ${ENI}
+					echo "iface br-ex inet manual" >> ${ENI}
+					echo "	ovs_type OVSBridge" >> ${ENI}
+					echo "	ovs_ports ${INTERFACE}" >> ${ENI}
+					echo "" >> ${ENI}
+				fi
+			fi
 
 			if [ -n "${SE_OVSBR}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
