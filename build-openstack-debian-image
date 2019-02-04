@@ -969,7 +969,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			INTERFACE=bond${BOND_NUMBER}
 			BOND_NUMBER=$(( ${BOND_NUMBER} + 1 ))
 
-			if [ -n "${SE_MTU}" ] ; then
+			if [ -n "${SE_EXTRA_OVS}" ] ; then
 				# Iface 0
 				echo "# Interface ${SE_IFACE0}" >> ${ENI}
 				echo "auto ${SE_IFACE0}" >> ${ENI}
@@ -1006,7 +1006,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			if [ -n "${SE_DNSSEARCH}" ] ; then
 				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
 			fi
-			if [ "${extra_ovs}" = "yes" ] ; then
+			if [ "${SE_EXTRA_OVS}" = "yes" ] ; then
 				echo "	ovs_bridge br-ex" >> ${ENI}
 				echo "	ovs_type OVSBond" >> ${ENI}
 				echo "	ovs_bonds ${SE_IFACE0} ${SE_IFACE1}" >> ${ENI}
@@ -1050,10 +1050,10 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "" >>${ENI}
 
 
-			if [ -n "${vmnet_addr}" ] ; then
-				echo "# Interface vlan${SE_VLANNUM}:1" >> ${ENI}
-				echo "auto vlan${SE_VLANNUM}:1" >> ${ENI}
-				echo "iface vlan${SE_VLANNUM}:1 inet static" >> ${ENI}
+			if [ -n "${SE_VMNET_ADDR}" ] ; then
+				echo "# Interface vlan${SE_VMNET_VLAN}" >> ${ENI}
+				echo "auto vlan${SE_VMNET_VLAN}" >> ${ENI}
+				echo "iface vlan${SE_VMNET_VLAN} inet static" >> ${ENI}
 				echo "	vlan-raw-device ${INTERFACE}" >> ${ENI}
 				echo "	pre-up ip link set up dev ${SE_IFACE0}" >> ${ENI}
 				echo "	pre-up ip link set up dev ${SE_IFACE1}" >> ${ENI}
@@ -1066,8 +1066,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 				fi
 				echo "" >>${ENI}
 
-				if [ "${extra_ovs}" = "yes" ] ; then
-	                                echo "allow-ovs br-ex" >> ${ENI}
+				if [ "${SE_EXTRA_OVS}" = "yes" ] ; then
+	                                echo "auto br-ex" >> ${ENI}
 					echo "iface br-ex inet manual" >> ${ENI}
 					echo "	ovs_type OVSBridge" >> ${ENI}
 					echo "	ovs_ports ${INTERFACE}" >> ${ENI}
