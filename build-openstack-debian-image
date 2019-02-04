@@ -973,12 +973,14 @@ if [ -n "${STATIC_ETH}" ] ; then
 				# Iface 0
 				echo "# Interface ${SE_IFACE0}" >> ${ENI}
 				echo "auto ${SE_IFACE0}" >> ${ENI}
+				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
 				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
 				echo "	ovs_type OVSPort" >> ${ENI}
 				echo "" >> ${ENI}
 				# Iface 1
 				echo "# Interface ${SE_IFACE1}" >> ${ENI}
 				echo "auto ${SE_IFACE1}" >> ${ENI}
+				echo "iface ${SE_IFACE1} inet manual" >> ${ENI}
 				echo "	ovs_bridge ${INTERFACE}" >> ${ENI}
 				echo "	ovs_type OVSPort" >> ${ENI}
 			else
