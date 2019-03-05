@@ -885,7 +885,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 		case "${SE_TYPE}" in
 		"normal")
 			if [ -n "${SE_VMNET_ADDR}" ] ; then
-				echo "auto ${SE_IFACE0}"
+				echo "auto ${SE_IFACE0}" >> ${ENI}
 				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
 				echo "	up ifup br-ex" >> ${ENI}
 				echo "" >> ${ENI}
