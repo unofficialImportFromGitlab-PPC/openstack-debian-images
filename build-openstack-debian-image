@@ -884,43 +884,85 @@ if [ -n "${STATIC_ETH}" ] ; then
 
 		case "${SE_TYPE}" in
 		"normal")
-			if [ -n "${SE_OVSBR}" ] ; then
-				INTERFACE=${SE_OVSBR}
-				echo "# Interface ${SE_OVSBR}" >> ${ENI}
-				echo "allow-ovs ${SE_OVSBR}" >> ${ENI}
-			else
-				INTERFACE=${SE_IFACE0}
-				echo "# Interface ${INTERFACE}" >> ${ENI}
-				echo "allow-hotplug ${INTERFACE}" >> ${ENI}
-			fi
-			echo "iface ${INTERFACE} inet static" >> ${ENI}
-			if [ -n "${SE_OVSBR}" ] ; then
+			if [ -n "${SE_VMNET_ADDR}" ] ; then
+				echo "auto ${SE_IFACE0}"
+				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+				echo "	up ifup br-ex" >> ${ENI}
+				echo "" >> ${ENI}
+
+				echo "auto ${SE_IFACE0}:1" >> ${ENI}
+				echo "iface ${SE_IFACE0}:1 inet static" >> ${ENI}
+				echo "	address ${IFACE_ADDR}" >> ${ENI}
+				echo "	network ${IFACE_NETWORK}" >> ${ENI}
+				echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+				echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+				if [ "${SE_MTU}" ] ; then
+					echo "	mtu ${SE_MTU}" >> ${ENI}
+				fi
+				if [ -n "${SE_DNS}" ] ; then
+					echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+				fi
+				if [ -n "${SE_DNSSEARCH}" ] ; then
+					echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+				fi
+				echo "" >> ${ENI}
+
+				echo "auto ${SE_IFACE0}:2" >> ${ENI}
+				echo "iface ${SE_IFACE0}:2 inet static" >> ${ENI}
+				echo "	address ${VMNET_IFACE_ADDR}" >> ${ENI}
+				echo "	network ${VMNET_IFACE_NETWORK}" >> ${ENI}
+				echo "	netmask ${VMNET_IFACE_NETMASK}" >> ${ENI}
+				echo "	broadcast ${VMNET_IFACE_BROADCAST}" >> ${ENI}
+				if [ "${SE_MTU}" ] ; then
+					echo "	mtu ${SE_MTU}" >> ${ENI}
+				fi
+				echo "" >> ${ENI}
+
+                                echo "auto br-ex" >> ${ENI}
+				echo "iface br-ex inet manual" >> ${ENI}
 				echo "	ovs_type OVSBridge" >> ${ENI}
 				echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
-			fi
-			echo "	address ${IFACE_ADDR}" >> ${ENI}
-			echo "	network ${IFACE_NETWORK}" >> ${ENI}
-			echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
-			echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
-			if [ -n "${SE_GW}" ] ; then
-				echo "	gateway ${SE_GW}" >> ${ENI}
-			fi
-			if [ "${SE_MTU}" ] ; then
-				echo "	mtu ${SE_MTU}" >> ${ENI}
-			fi
-			if [ -n "${SE_DNS}" ] ; then
-				echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
-			fi
-			if [ -n "${SE_DNSSEARCH}" ] ; then
-				echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
-			fi
-			echo "" >> ${ENI}
-			if [ -n "${SE_OVSBR}" ] ; then
-				echo "allow-${SE_OVSBR} ${SE_IFACE0}" >> ${ENI}
-				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
-				echo "	ovs_bridge ${SE_OVSBR}" >> ${ENI}
-				echo "	ovs_type OVSPort" >> ${ENI}
+				echo "	up ovs-vsctl add-port br-ex ${SE_IFACE0}" >> ${ENI}
 				echo "" >> ${ENI}
+			else
+				if [ -n "${SE_OVSBR}" ] ; then
+					INTERFACE=${SE_OVSBR}
+					echo "# Interface ${SE_OVSBR}" >> ${ENI}
+					echo "allow-ovs ${SE_OVSBR}" >> ${ENI}
+				else
+					INTERFACE=${SE_IFACE0}
+					echo "# Interface ${INTERFACE}" >> ${ENI}
+					echo "allow-hotplug ${INTERFACE}" >> ${ENI}
+				fi
+				echo "iface ${INTERFACE} inet static" >> ${ENI}
+				if [ -n "${SE_OVSBR}" ] ; then
+					echo "	ovs_type OVSBridge" >> ${ENI}
+					echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
+				fi
+				echo "	address ${IFACE_ADDR}" >> ${ENI}
+				echo "	network ${IFACE_NETWORK}" >> ${ENI}
+				echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
+				echo "	broadcast ${IFACE_BROADCAST}" >> ${ENI}
+				if [ -n "${SE_GW}" ] ; then
+					echo "	gateway ${SE_GW}" >> ${ENI}
+				fi
+				if [ "${SE_MTU}" ] ; then
+					echo "	mtu ${SE_MTU}" >> ${ENI}
+				fi
+				if [ -n "${SE_DNS}" ] ; then
+					echo "	dns-nameservers ${SE_ALL_NS}" >> ${ENI}
+				fi
+				if [ -n "${SE_DNSSEARCH}" ] ; then
+					echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
+				fi
+				echo "" >> ${ENI}
+				if [ -n "${SE_OVSBR}" ] ; then
+					echo "allow-${SE_OVSBR} ${SE_IFACE0}" >> ${ENI}
+					echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
+					echo "	ovs_bridge ${SE_OVSBR}" >> ${ENI}
+					echo "	ovs_type OVSPort" >> ${ENI}
+					echo "" >> ${ENI}
+				fi
 			fi
 		;;
 		"bond")

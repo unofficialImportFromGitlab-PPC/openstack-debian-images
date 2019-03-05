@@ -1,3 +1,9 @@
+openstack-debian-images (1.37) UNRELEASED; urgency=medium
+
+  * Add vmnet option for non-bridge, non-vlan (ie: normal eth0) setup.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 05 Mar 2019 11:51:53 +0100
+
 openstack-debian-images (1.36) unstable; urgency=medium
 
   * Fix-up bondvlan with OVS bridge option.
