@@ -897,7 +897,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 		case "${SE_TYPE}" in
 		"ovsbridge")
 			echo "auto ${SE_OVSBRIDGE_NAME}" >> ${ENI}
-			echo "iface ${SE_OVSBRIDGE_NAME}" >> ${ENI}
+			echo "iface ${SE_OVSBRIDGE_NAME} inet manual" >> ${ENI}
 			echo "	ovs_type OVSBridge" >> ${ENI}
 			echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
 			echo "	up ovs-vsctl add-port ${SE_OVSBRIDGE_NAME} ${SE_IFACE0}" >> ${ENI}
