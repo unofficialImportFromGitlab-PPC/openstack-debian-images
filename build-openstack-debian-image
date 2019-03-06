@@ -921,6 +921,9 @@ if [ -n "${STATIC_ETH}" ] ; then
 				if [ -n "${SE_DNSSEARCH}" ] ; then
 					echo "	dns-search ${SE_DNSSEARCH}" >> ${ENI}
 				fi
+				if [ -n "${SE_GW}" ] ; then
+					echo "	gateway ${SE_GW}" >> ${ENI}
+				fi
 				echo "" >> ${ENI}
 
 				echo "auto ${SE_VMNET_IFACE0}" >> ${ENI}
