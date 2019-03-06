@@ -819,7 +819,10 @@ if [ -n "${STATIC_ETH}" ] ; then
 		SE_OVSBR=""
 		SE_VMNET_ADDR=""
 		SE_VMNET_VLAN=""
+		SE_VMNET_IFACE1=""
+		SE_VMNET_IFACE2=""
 		SE_EXTRA_OVS="no"
+		SE_OVSBRIDGE_NAME=""
 		ETH_PARAMS=$(echo ${i} | tr , " ")
 		for ETH_PARAM in ${ETH_PARAMS} ; do
 			ETH_PDIR=$(echo ${ETH_PARAM} | cut -d= -f1)
@@ -863,8 +866,17 @@ if [ -n "${STATIC_ETH}" ] ; then
 			"vmnet_vlan")
 				SE_VMNET_VLAN=${ETH_PVAL}
 			;;
+			"vmnet_iface0")
+				SE_VMNET_IFACE0=${ETH_PVAL}
+			;;
+			"vmnet_iface1")
+				SE_VMNET_IFACE1=${ETH_PVAL}
+			;;
 			"extra_ovs")
 				SE_EXTRA_OVS="yes"
+			;;
+			"ovsbridgename")
+				SE_OVSBRIDGE_NAME=${ETH_PVAL}
 			;;
 			*)
 				echo "Unrecognized parameter"
@@ -883,15 +895,19 @@ if [ -n "${STATIC_ETH}" ] ; then
 		fi
 
 		case "${SE_TYPE}" in
+		"ovsbridge")
+			echo "auto ${SE_OVSBRIDGE_NAME}" >> ${ENI}
+			echo "iface ${SE_OVSBRIDGE_NAME}" >> ${ENI}
+			echo "	ovs_type OVSBridge" >> ${ENI}
+			echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
+			echo "	up ovs-vsctl add-port ${SE_OVSBRIDGE_NAME} ${SE_IFACE0}" >> ${ENI}
+			echo "	up ip link set ${SE_IFACE0} up" >> ${ENI}
+			echo "" >> ${ENI}
+		;;
 		"normal")
 			if [ -n "${SE_VMNET_ADDR}" ] ; then
 				echo "auto ${SE_IFACE0}" >> ${ENI}
-				echo "iface ${SE_IFACE0} inet manual" >> ${ENI}
-				echo "	up ifup br-ex" >> ${ENI}
-				echo "" >> ${ENI}
-
-				echo "auto ${SE_IFACE0}:1" >> ${ENI}
-				echo "iface ${SE_IFACE0}:1 inet static" >> ${ENI}
+				echo "iface ${SE_IFACE0} inet static" >> ${ENI}
 				echo "	address ${IFACE_ADDR}" >> ${ENI}
 				echo "	network ${IFACE_NETWORK}" >> ${ENI}
 				echo "	netmask ${IFACE_NETMASK}" >> ${ENI}
@@ -907,8 +923,8 @@ if [ -n "${STATIC_ETH}" ] ; then
 				fi
 				echo "" >> ${ENI}
 
-				echo "auto ${SE_IFACE0}:2" >> ${ENI}
-				echo "iface ${SE_IFACE0}:2 inet static" >> ${ENI}
+				echo "auto ${SE_VMNET_IFACE0}" >> ${ENI}
+				echo "iface ${SE_VMNET_IFACE0} inet static" >> ${ENI}
 				echo "	address ${VMNET_IFACE_ADDR}" >> ${ENI}
 				echo "	network ${VMNET_IFACE_NETWORK}" >> ${ENI}
 				echo "	netmask ${VMNET_IFACE_NETMASK}" >> ${ENI}
@@ -918,12 +934,6 @@ if [ -n "${STATIC_ETH}" ] ; then
 				fi
 				echo "" >> ${ENI}
 
-                                echo "auto br-ex" >> ${ENI}
-				echo "iface br-ex inet manual" >> ${ENI}
-				echo "	ovs_type OVSBridge" >> ${ENI}
-				echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
-				echo "	up ovs-vsctl add-port br-ex ${SE_IFACE0}" >> ${ENI}
-				echo "" >> ${ENI}
 			else
 				if [ -n "${SE_OVSBR}" ] ; then
 					INTERFACE=${SE_OVSBR}
