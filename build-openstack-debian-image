@@ -791,6 +791,16 @@ if [ "${REAL_HARDWARE}" = "no" ] ; then
 	rm -f ${MOUNT_DIR}/lib/udev/write_net_rules
 fi
 
+# Customize a little bit apt
+echo 'pkg::Progress-Fancy "1";
+APT::Color "true";' >${MOUNT_DIR}/etc/apt/apt.conf.d/99progressbar
+
+echo 'Acquire::Languages "none";' >${MOUNT_DIR}/etc/apt/apt.conf.d/99notranslations
+
+echo 'APT::Install-Recommends "0";' >${MOUNT_DIR}/etc/apt/apt.conf.d/80norecommends
+
+echo 'Acquire::PDiffs "false";' >${MOUNT_DIR}/etc/apt/apt.conf.d/98nopdiff
+
 # Setup networking
 ENI=${MOUNT_DIR}/etc/network/interfaces
 
