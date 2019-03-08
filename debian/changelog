@@ -4,7 +4,7 @@ openstack-debian-images (1.37) UNRELEASED; urgency=medium
   * Add type=ovsbridge.
   * Remove euca2ools and aptitude from default.
   * Customize apt with nicer defaults.
-  * Install lsb-release by default.
+  * Install lsb-release busybox-static and console-setup by default.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 05 Mar 2019 11:51:53 +0100
 
