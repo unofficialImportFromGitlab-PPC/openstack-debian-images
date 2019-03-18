@@ -1200,7 +1200,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 	done
 	if echo "${STATIC_ETH}" | grep -q bond ; then
 		mkdir -p ${MOUNT_DIR}/etc/modprobe.d
-		echo "options bonding mode=4" >${MOUNT_DIR}/etc/modprobe.d/bonding.conf
+		echo "options bonding mode=4 lacp_rate=1 xmit_hash_policy=layer3+4" >${MOUNT_DIR}/etc/modprobe.d/bonding.conf
 	fi
 else
 # If no --static-iface param is set, then DHCP by default
