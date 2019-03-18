@@ -7,6 +7,8 @@ openstack-debian-images (1.37) UNRELEASED; urgency=medium
   * Install lsb-release busybox-static and console-setup by default.
   * Set "lacp_rate=1 xmit_hash_policy=layer3+4" in /etc/modprobe.d/bonding.conf
     if we're using bonding (on top of already set "bonding mode=4").
+  * Select deadline scheduler for all /dev/sdX drives (set using a udev rules
+    file in /etc/network/interfaces/60-deadline-scheduler-to-all-sdx.rules).
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 05 Mar 2019 11:51:53 +0100
 

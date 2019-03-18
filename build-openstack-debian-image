@@ -1222,6 +1222,11 @@ source /etc/network/interfaces.d/*
 " >> ${MOUNT_DIR}/etc/network/interfaces
 fi
 
+mkdir -p ${MOUNT_DIR}/etc/udev/rules.d
+echo '# set deadline scheduler for all sdX disks
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/scheduler}="deadline"
+' >${MOUNT_DIR}/etc/network/interfaces/60-deadline-scheduler-to-all-sdx.rules
+
 # Setup the default hostname (will be set by cloud-init at boot,
 # though for installing real hardware, we do care)
 if [ -z "${HOSTNAME}" ] ; then
