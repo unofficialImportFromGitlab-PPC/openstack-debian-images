@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright:
-#   (c) 2013-2016, Thomas Goirand <zigo@debian.org>
+#   (c) 2013-2019, Thomas Goirand <zigo@debian.org>
 #   (c) 2015-2016, Bastian Blank
 # License: Apache 2.0, see LICENSE.txt for details.
 
@@ -1406,7 +1406,15 @@ mkdir -p ${MOUNT_DIR}/boot/extlinux
 if [ "${RELEASE}" = "wheezy" ] ; then
 	append="rootdelay=30"
 fi
-KERNEL_PARAMS="nosplash text biosdevname=0 net.ifnames=0 console=tty0 console=$CONSOLE,115200 earlyprintk=$CONSOLE,115200 consoleblank=0 systemd.show_status=true $append"
+
+# In Buster, with the console activated on Qemu, everything is busted, so let's unbust.
+if [ "${REAL_HARDWARE}" = "yes" ] && [ "${PROC_MANUFACTURER}" = "QEMU" ] ; then
+	CONSOLE_PARAM="console=tty0"
+else
+	CONSOLE_PARAM="console=tty0 console=$CONSOLE,115200 earlyprintk=$CONSOLE,115200"
+fi
+
+KERNEL_PARAMS="nosplash text biosdevname=0 net.ifnames=0 ${CONSOLE_PARAM} consoleblank=0 systemd.show_status=true $append"
 if [ "${BOOTMANAGER}" = "grub" ] ; then
 	sed -i -e 's|^[ #\t]*GRUB_CMDLINE_LINUX_DEFAULT[ #\t]*=.*|GRUB_CMDLINE_LINUX_DEFAULT="'"${KERNEL_PARAMS}"'"|' ${MOUNT_DIR}/etc/default/grub
 	echo "
