@@ -33,7 +33,8 @@ Options are:
  --password|-p <root-password> (dangerous option: avoid it if possible)
  --boot-type|-bt <boot type> (default: mbr)
  --architecture|-a <architecture> (default: amd64)
- --dest-hdd <dest-hdd>
+ --dest-hdd <dest-hdd> / raid personality (ie: raid0, raid1, raid10)
+ --raid-devices <sda,sdb> (only valid if --dest-hdd = raidX)
  --no-cloud-init
  --root-ssh-key <path-to-id_rsa.pub>
  --permit-ssh-as-root
@@ -244,6 +245,15 @@ for i in $@ ; do
 		shift
 		shift
 	;;
+	"--raid-devices")
+		if [ -z "${2}" ] ; then
+			echo "No raid devices specified"
+			usage
+		fi
+		RAID_DEVS=${2}
+		shift
+		shift
+	;;
 	"--no-cloud-init")
 		CLOUD_INIT=no
 		shift
@@ -429,6 +439,34 @@ else
 	BOOT_MGR_PKG="extlinux"
 fi
 
+if [ "${REAL_HARDWARE}" = "no" ] ; then
+	RAW_NAME=${OUTPUT}.raw
+	QCOW2_NAME=${OUTPUT}.qcow2
+	rm -f ${RAW_NAME}
+	qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
+	DEVICES_TO_PARTITION=${RAW_NAME}
+	RAID_PKG=""
+else
+	case "${DEST_HDD}" in
+	raid0|raid1|raid10)
+		RAID_DEVICES=$(echo ${RAID_DEVS} | tr , " ")
+		DEVICES_TO_PARTITION=""
+		for i in ${RAID_DEVICES} ; do
+			if [ -n "${DEVICES_TO_PARTITION}" ] ; then
+				DEVICES_TO_PARTITION="${DEVICES_TO_PARTITION} /dev/${i}"
+			else
+				DEVICES_TO_PARTITION="/dev/${i}"
+			fi
+		done
+	;;
+	*)
+		RAW_NAME=/dev/${DEST_HDD}
+		DEVICES_TO_PARTITION=/dev/${DEST_HDD}
+	;;
+	esac
+	RAID_PKG=",mdadm"
+fi
+
 IF_PKG=""
 if echo "${STATIC_ETH}" | grep -q bond ; then
 	IF_PKG="${IF_PKG},ifenslave,ethtool"
@@ -442,7 +480,7 @@ if echo "${STATIC_ETH}" | grep -q vlan ; then
 	IF_PKG="${IF_PKG},vlan"
 fi
 
-NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${BOOT_MGR_PKG},openssh-server,file,kbd,file${IF_PKG}
+NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${BOOT_MGR_PKG},openssh-server,file,kbd,file${IF_PKG}${RAID_PKG}
 if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
@@ -474,14 +512,6 @@ if ! [ `whoami` = "root" ] ; then
 	echo "You have to be root to run this script"
 	exit 1
 fi
-if [ "${REAL_HARDWARE}" = "no" ] ; then
-	RAW_NAME=${OUTPUT}.raw
-	QCOW2_NAME=${OUTPUT}.qcow2
-	rm -f ${RAW_NAME}
-	qemu-img create ${RAW_NAME} ${IMAGE_SIZE}G
-else
-	RAW_NAME=/dev/${DEST_HDD}
-fi
 
 set -x
 
@@ -490,42 +520,44 @@ set -x
 ######################################
 PARTED=/sbin/parted
 
-if [ "${BOOTTYPE}" = "mbr" ] ; then
-	${PARTED} -s ${RAW_NAME} mktable msdos
-	${PARTED} -s -a optimal ${RAW_NAME} mkpart primary ext4 1Mi 100%
-	${PARTED} -s ${RAW_NAME} set 1 boot on
-	install-mbr --force ${RAW_NAME}
+for BLOCKDEV in ${DEVICES_TO_PARTITION} ; do
+	if [ "${BOOTTYPE}" = "mbr" ] ; then
+		${PARTED} -s ${BLOCKDEV} mktable msdos
+		${PARTED} -s -a optimal ${BLOCKDEV} mkpart primary ext4 1Mi 100%
+		${PARTED} -s ${BLOCKDEV} set 1 boot on
+		install-mbr --force ${BLOCKDEV}
 
-	if [ "${REAL_HARDWARE}" = "no" ] ; then
-		RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1)
-		if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-			LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
-			LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
-			echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
-		else
-			echo "It seems kpartx didn't mount the image correctly: exiting."
-			exit 1
+		if [ "${REAL_HARDWARE}" = "no" ] ; then
+			RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1)
+			if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+				LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+				LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+				echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+			else
+				echo "It seems kpartx didn't mount the image correctly: exiting."
+				exit 1
+			fi
+		fi
+	else # uefi
+		${PARTED} -s ${BLOCKDEV} mktable gpt
+		${PARTED} -s -a optimal ${BLOCKDEV} mkpart ESP fat32 1Mi 101Mi
+		${PARTED} -s -a optimal ${BLOCKDEV} -- mkpart ROOT ext4 102Mi -64s
+		${PARTED} -s ${BLOCKDEV} set 1 esp on
+
+		if [ "${REAL_HARDWARE}" = "no" ] ; then
+			RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1 | tail -1)
+			if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+				LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
+				LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+				echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+			else
+				echo "It seems kpartx didn't mount the image correctly: exiting."
+				exit 1
+			fi
+			LOOP_DEVICE_ESP="${LOOPRAW_DEVICE}"p1
 		fi
 	fi
-else # uefi
-	${PARTED} -s ${RAW_NAME} mktable gpt
-	${PARTED} -s -a optimal ${RAW_NAME} mkpart ESP fat32 1Mi 101Mi
-	${PARTED} -s -a optimal ${RAW_NAME} -- mkpart ROOT ext4 102Mi -64s
-	${PARTED} -s ${RAW_NAME} set 1 esp on
-
-	if [ "${REAL_HARDWARE}" = "no" ] ; then
-		RESULT_KPARTX=$(kpartx -asv ${RAW_NAME} 2>&1 | tail -1)
-		if echo "${RESULT_KPARTX}" | grep "^add map" ; then
-			LOOP_DEVICE=$(echo ${RESULT_KPARTX} | cut -d" " -f3)
-			LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
-			echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
-		else
-			echo "It seems kpartx didn't mount the image correctly: exiting."
-			exit 1
-		fi
-		LOOP_DEVICE_ESP="${LOOPRAW_DEVICE}"p1
-	fi
-fi
+done
 
 cleanup(){
 	error=$?
@@ -549,19 +581,77 @@ cleanup(){
 	if [ "${REAL_HARDWARE}" = "no" ] ; then
 		kpartx -d ${RAW_NAME}
 	fi
+	if [ -n "${RAID_DEVICES}" ] ; then
+		mdadm --stop /dev/md0
+	fi
 	exit $error
 }
 trap "cleanup" EXIT TERM INT
+
+if [ -n "${RAID_DEVICES}" ] ; then
+	# Transform the list "sda sdb" to "/dev/sda1 /dev/sdb1"
+	# if UEFI, then use "/dev/sda2 /dev/sdb2"
+	if [ "${BOOTTYPE}" = "mbr" ] ; then
+		RAID_PART_NUM=1
+	else
+		RAID_PART_NUM=2
+	fi
+	RAID_DLIST=""
+	NUM_DEVS=0
+	FIRST_RAID_ESP_DEV=""
+	for i in ${DEVICES_TO_PARTITION} ; do
+		if [ -n "${RAID_DLIST}" ] ; then
+			RAID_DLIST="${RAID_DLIST} ${i}${RAID_PART_NUM}"
+		else
+			RAID_DLIST="${i}${RAID_PART_NUM}"
+		fi
+		if [ -z "${FIRST_RAID_DEV}" ] && [ "${BOOTTYPE}" = "uefi" ] ; then
+			# This is the UEFI partition of the first RAID device
+			FIRST_RAID_ESP_DEV=/dev/${i}1
+		fi
+		NUM_DEVS=$((${NUM_DEVS} + 1))
+	done
+
+	case "${DEST_HDD}" in
+	"raid0")
+		echo "raid 0: Currently unsupported"
+		exit 1
+		mdadm --create --run --verbose /dev/md0 --level=0 --raid-devices=${NUM_DEVS} ${RAID_DLIST}
+		GRUB_MODULES=mdraid1x
+	;;
+	"raid1")
+		mdadm --create --run --verbose /dev/md0 --level=1 --raid-devices=${NUM_DEVS} ${RAID_DLIST}
+		GRUB_MODULES=mdraid1x
+	;;
+	"raid10")
+		echo "raid 10: Currently unsupported"
+		exit 1
+		mdadm --create --run --verbose /dev/md0 --level=10 --raid-devices=${NUM_DEVS} ${RAID_DLIST}
+		GRUB_MODULES=mdraid1x
+	;;
+	*)
+		echo "Unrecognized RAID type"
+		exit 1
+	;;
+	esac
+fi
 
 if [ "${REAL_HARDWARE}" = "no" ] ; then
 	DEST_PART=/dev/mapper/${LOOP_DEVICE}
 	DEST_PART_ESP=/dev/mapper/${LOOP_DEVICE_ESP}
 else
-	if [ "${BOOTTYPE}" = "mbr" ] ; then
-		DEST_PART=/dev/${DEST_HDD}1
+	if [ -n "${RAID_DEVICES}" ] ; then
+		DEST_PART=/dev/md0
+		if [ "${BOOTTYPE}" = "uefi" ] ; then
+			DEST_PART_ESP=${FIRST_RAID_ESP_DEV}
+		fi
 	else
-		DEST_PART_ESP=/dev/${DEST_HDD}1
-		DEST_PART=/dev/${DEST_HDD}2
+		if [ "${BOOTTYPE}" = "mbr" ] ; then
+			DEST_PART=/dev/${DEST_HDD}1
+		else
+			DEST_PART_ESP=/dev/${DEST_HDD}1
+			DEST_PART=/dev/${DEST_HDD}2
+		fi
 	fi
 fi
 
@@ -621,6 +711,37 @@ fi
 ############################
 ### Customize the distro ###
 ############################
+### Fixup mdadm.conf if using RAID ###
+######################################
+if [ -n "${RAID_DEVICES}" ] ; then
+	mkdir -p ${MOUNT_DIR}/etc/mdadm
+	RAID_UUID=$(echo ${UUID} | sed s/-/:/g)
+	echo "# mdadm.conf
+#
+# Please refer to mdadm.conf(5) for information about this file.
+#
+
+# by default (built-in), scan all partitions (/proc/partitions) and all
+# containers for MD superblocks. alternatively, specify devices to scan, using
+# wildcards if desired.
+#DEVICE partitions containers
+
+# auto-create devices with Debian standard permissions
+CREATE owner=root group=disk mode=0660 auto=yes
+
+# automatically tag new arrays as belonging to the local system
+HOMEHOST <system>
+
+# instruct the monitoring daemon where to send mail alerts
+MAILADDR root@localhost
+
+# definitions of existing MD arrays
+ARRAY /dev/md/0  metadata=1.2 UUID=${RAID_UUID} name=${HOSTNAME}:0
+" >${MOUNT_DIR}/etc/mdadm/mdadm.conf
+	mdadm --detail --scan >>${MOUNT_DIR}/etc/mdadm/mdadm.conf
+	chmod 644 /etc/mdadm/mdadm.conf
+fi
+
 ### Customize: access to the VM ###
 # # # # # # # # # # # # # # # # # #
 # Setup default root password to what has been set on the command line
@@ -653,9 +774,15 @@ fi
 ### Customize: misc stuff ###
 # # # # # # # # # # # # # # #
 # Setup fstab
-echo "# /etc/fstab: static file system information.
+if [ -n "${RAID_DEVICES}" ] ; then
+	echo "# /etc/fstab: static file system information.
+/dev/md0	/	ext4	errors=remount-ro	0	1
+" > ${MOUNT_DIR}/etc/fstab
+else
+	echo "# /etc/fstab: static file system information.
 UUID=${UUID}	/	ext4	errors=remount-ro	0	1
 " > ${MOUNT_DIR}/etc/fstab
+fi
 if [ "${BOOTTYPE}" = "uefi" ] ; then
 	echo "UUID=${UUID_ESP}	/boot/efi	vfat	errors=remount-ro	0	0" >> ${MOUNT_DIR}/etc/fstab
 fi
@@ -663,7 +790,7 @@ mount -t proc proc ${MOUNT_DIR}/proc
 
 if [ "${REAL_HARDWARE}" = "no" ] ; then
 	echo "# disable pc speaker
-	blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
+blacklist pcspkr" >${MOUNT_DIR}/etc/modprobe.d/blacklist.conf
 fi
 
 # No clear for the tty1 console
@@ -1436,14 +1563,18 @@ GRUB_SERIAL_COMMAND=\"serial --unit=1 --speed=115200 --word=8 --parity=no --stop
 	echo "grub-efi-${ARCH} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
 	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
 	# Run grub from the chroot, pointing to the bind mounted /dev device.
-	if [ "${REAL_HARDWARE}" = "no" ] ; then
-		GRUB_DESTINATION_DEV=/dev/${LOOPRAW_DEVICE}
+	if [ -n "${RAID_DEVICES}" ] ; then
+		for i in ${RAID_DEVICES} ; do
+			chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt ${GRUB_MODULES}" --grub-mkdevicemap=/boot/grub/device.map /dev/${i}
+		done
 	else
-		GRUB_DESTINATION_DEV=/dev/${DEST_HDD}
+		if [ "${REAL_HARDWARE}" = "no" ] ; then
+			GRUB_DESTINATION_DEV=/dev/${LOOPRAW_DEVICE}
+		else
+			GRUB_DESTINATION_DEV=/dev/${DEST_HDD}
+		fi
+		chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map ${GRUB_DESTINATION_DEV}
 	fi
-	chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map ${GRUB_DESTINATION_DEV}
-	# Run grub from the host, pointing to the guest installation
-	#grub-install --no-floppy --modules=part_msdos --grub-mkdevicemap=${MOUNT_DIR}/boot/grub/device.map --root-directory=${MOUNT_DIR} /dev/${LOOPRAW_DEVICE}
 	umount ${MOUNT_DIR}/sys
 	umount ${MOUNT_DIR}/dev
 	umount ${MOUNT_DIR}/proc
@@ -1537,6 +1668,10 @@ if [ "${REAL_HARDWARE}" = "no" ] ; then
 
 		qemu-img convert -c -f raw ${RAW_NAME}${OTHER_QEMU_IMG_OPTIONS} -O qcow2 ${QCOW2_NAME}
 	fi
+fi
+
+if [ -n "${RAID_DEVICES}" ] ; then
+	mdadm --stop /dev/md0
 fi
 
 if [ "${REBOOT_AFTER_INSTALL}" = "yes" ] ; then
