@@ -525,6 +525,13 @@ for BLOCKDEV in ${DEVICES_TO_PARTITION} ; do
 		${PARTED} -s ${BLOCKDEV} mktable msdos
 		${PARTED} -s -a optimal ${BLOCKDEV} mkpart primary ext4 1Mi 100%
 		${PARTED} -s ${BLOCKDEV} set 1 boot on
+		if [ -n "${RAID_DEVICES}" ] ; then
+			${PARTED} -s ${BLOCKDEV} set 1 raid on
+			# Make sure the partition first blocks is erased, otherwise,
+			# RAID creation may fail.
+			sleep 5
+			dd if=/dev/zero of=${BLOCKDEV}1 bs=4M count=1
+		fi
 		install-mbr --force ${BLOCKDEV}
 
 		if [ "${REAL_HARDWARE}" = "no" ] ; then
@@ -736,7 +743,6 @@ HOMEHOST <system>
 MAILADDR root@localhost
 
 # definitions of existing MD arrays
-ARRAY /dev/md/0  metadata=1.2 UUID=${RAID_UUID} name=${HOSTNAME}:0
 " >${MOUNT_DIR}/etc/mdadm/mdadm.conf
 	mdadm --detail --scan >>${MOUNT_DIR}/etc/mdadm/mdadm.conf
 	chmod 644 /etc/mdadm/mdadm.conf
