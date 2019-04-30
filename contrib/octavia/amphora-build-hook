@@ -3,6 +3,16 @@
 set -e
 set -x
 
+echo "deb http://buster-stein.debian.net/debian buster-stein-backports main
+deb http://buster-stein.debian.net/debian buster-stein-backports-nochange main
+" >${BODI_CHROOT_PATH}/etc/apt/sources.list.d/buster-stein.list
+
+wget http://buster-stein.debian.net/debian/dists/pubkey.gpg -O ${BODI_CHROOT_PATH}/pubkey.gpg
+
+chroot ${BODI_CHROOT_PATH} apt-key add /pubkey.gpg
+chroot ${BODI_CHROOT_PATH} apt-get update
+chroot ${BODI_CHROOT_PATH} apt-get install octavia-agent
+
 chroot ${BODI_CHROOT_PATH} systemctl enable octavia-agent
 
 ### Install the custom crypted RAMFS service
@@ -48,13 +58,3 @@ if [ "$reason" = "BOUND" ]; then
 	fi
 fi' > /etc/dhcp/dhclient-enter-hooks.d/rebind-sshd
 chmod +x /etc/dhcp/dhclient-enter-hooks.d/rebind-sshd
-
-echo "deb http://buster-stein.debian.net/debian buster-stein-backports main
-deb http://buster-stein.debian.net/debian buster-stein-backports-nochange main
-" >${BODI_CHROOT_PATH}/etc/apt/sources.list.d/buster-stein.list
-
-wget http://buster-stein.debian.net/debian/dists/pubkey.gpg -O ${BODI_CHROOT_PATH}/pubkey.gpg
-
-chroot ${BODI_CHROOT_PATH} apt-key add /pubkey.gpg
-chroot ${BODI_CHROOT_PATH} apt-get update
-chroot ${BODI_CHROOT_PATH} apt-get install octavia-agent
