@@ -1,0 +1,60 @@
+#!/bin/sh
+
+set -e
+set -x
+
+chroot ${BODI_CHROOT_PATH} systemctl enable octavia-agent
+
+### Install the custom crypted RAMFS service
+cp amphora-cert-ramfs-* ${BODI_CHROOT_PATH}/sbin
+echo "[Unit]
+Description=Creates an encrypted ramfs for Octavia certs
+After=cloud-config.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/amphora-cert-ramfs-start
+ExecStop=/sbin/amphora-cert-ramfs-stop
+RemainAfterExit=yes
+TimeoutSec=0
+
+[Install]
+WantedBy=octavia-agent.service
+" >${BODI_CHROOT_PATH}/lib/systemd/system/octavia-ramfs.service
+
+chroot ${BODI_CHROOT_PATH} systemctl enable octavia-ramfs.service
+
+# Fix haproxy /var/lib/haproxy
+[ -d ${BODI_CHROOT_PATH}/var/lib/haproxy ] || install -d -D -m 0755 -o root -g root ${BODI_CHROOT_PATH}/var/lib/haproxy
+update-rc.d -f haproxy remove
+
+# That's for keepalived
+echo ip6_tables > ${BODI_CHROOT_PATH}/etc/modules-load.d/ip6_tables.conf
+
+# Done in the Octavia elements, I don't know why...
+mkdir -p ${BODI_CHROOT_PATH}/etc/dhcp/dhclient-enter-hooks.d
+echo "#!/bin/sh
+make_resolv_conf() { : ; }" > ${BODI_CHROOT_PATH}/etc/dhcp/dhclient-enter-hooks.d/noresolvconf
+chmod +x ${BODI_CHROOT_PATH}/etc/dhcp/dhclient-enter-hooks.d/noresolvconf
+rm -f ${BODI_CHROOT_PATH}/etc/dhcp/dhclient-enter-hooks.d/resolvconf
+
+echo '#!/bin/sh
+if [ "$reason" = "BOUND" ]; then
+	if `grep -q "#ListenAddress 0.0.0.0" /etc/ssh/sshd_config`; then
+		/bin/sed -i "s/^#ListenAddress 0.0.0.0.*$/ListenAddress $new_ip_address/g" /etc/ssh/sshd_config
+		if `/bin/ps -ef|/bin/grep -v grep|/bin/grep -q sshd`; then
+			/usr/sbin/service ssh restart
+		fi
+	fi
+fi' > /etc/dhcp/dhclient-enter-hooks.d/rebind-sshd
+chmod +x /etc/dhcp/dhclient-enter-hooks.d/rebind-sshd
+
+echo "deb http://buster-stein.debian.net/debian buster-stein-backports main
+deb http://buster-stein.debian.net/debian buster-stein-backports-nochange main
+" >${BODI_CHROOT_PATH}/etc/apt/sources.list.d/buster-stein.list
+
+wget http://buster-stein.debian.net/debian/dists/pubkey.gpg -O ${BODI_CHROOT_PATH}/pubkey.gpg
+
+chroot ${BODI_CHROOT_PATH} apt-key add /pubkey.gpg
+chroot ${BODI_CHROOT_PATH} apt-get update
+chroot ${BODI_CHROOT_PATH} apt-get install octavia-agent
