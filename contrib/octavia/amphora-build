@@ -4,8 +4,9 @@ set -e
 set -x
 
 RELEASE=buster
+HOOK_PATH=$(dirname $0)/amphora-build-hook
 
-build-openstack-debian-image --release ${RELEASE} --hook-script `pwd`/amphora-build-hook \
+build-openstack-debian-image --release ${RELEASE} --hook-script ${HOOK_PATH} \
 	-u http://mirror.infomaniak.ch/debian \
 	-s http://mirror.infomaniak.ch/debian \
 	-e cryptsetup,acl,acpid,apparmor,apt-transport-https,at,bash-completion,cloud-guest-utils,cron,curl,dbus,dkms,dmeventd,ifenslave,ifupdown,iptables,iputils-tracepath,irqbalance,less,lsof,net-tools,netbase,netcat-openbsd,open-vm-tools,pollinate,psmisc,rsyslog,socat,tcpdump,uuid-runtime,vim-tiny,vlan,debconf,dbconfig-common \
