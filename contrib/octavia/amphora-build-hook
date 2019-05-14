@@ -3,6 +3,8 @@
 set -e
 set -x
 
+DIRNAME=$(dirname $0)
+
 echo "deb http://buster-stein.debian.net/debian buster-stein-backports main
 deb http://buster-stein.debian.net/debian buster-stein-backports-nochange main
 " >${BODI_CHROOT_PATH}/etc/apt/sources.list.d/buster-stein.list
@@ -16,3 +18,64 @@ chroot ${BODI_CHROOT_PATH} apt-get install octavia-agent -y
 mkdir -p ${BODI_CHROOT_PATH}/etc/systemd/system/octavia-agent.service.wants
 chroot ${BODI_CHROOT_PATH} ln -s /lib/systemd/system/octavia-agent-certs-ramfs.service /etc/systemd/system/octavia-agent.service.wants/octavia-agent-certs-ramfs.service
 chroot ${BODI_CHROOT_PATH} ln -s /lib/systemd/system/octavia-agent.service /etc/systemd/system/multi-user.target.wants/octavia-agent.service
+
+# Add the logrotate script
+mkdir -p ${BODI_CHROOT_PATH}/etc/logrotate.d
+cp ${DIRNAME}/amphora-agent ${BODI_CHROOT_PATH}/etc/logrotate.d
+
+mkdir -p ${BODI_CHROOT_PATH}/var/lib/octavia
+echo "global
+	group nogroup
+" >${BODI_CHROOT_PATH}/var/lib/octavia/haproxy-default-user-group.conf
+
+echo "#!/bin/bash
+if [[ \$HAPROXY_SERVER_ADDR =~ \":\" ]]; then
+    /bin/ping6 -q -n -w 1 -c 1 \$HAPROXY_SERVER_ADDR > /dev/null 2>&1
+else
+    /bin/ping -q -n -w 1 -c 1 \$HAPROXY_SERVER_ADDR > /dev/null 2>&1
+fi
+" >/var/lib/octavia/ping-wrapper.sh
+chmod +x /var/lib/octavia/ping-wrapper.sh
+
+# Set the amphora-netns.service
+mkdir -p ${BODI_CHROOT_PATH}/usr/lib/systemd/system
+cp ${DIRNAME}/amphora-netns.service ${BODI_CHROOT_PATH}/usr/lib/systemd/system/amphora-netns.service
+
+# Disable haproxy by default
+chroot ${BODI_CHROOT_PATH} update-rc.d haproxy disable
+chroot ${BODI_CHROOT_PATH} update-rc.d -f haproxy remove
+
+# Load nf_conntrack by default
+echo "nf_conntrack" >>${BODI_CHROOT_PATH}/etc/modules
+
+# Set some sysctl.conf values
+echo "# Some sysctl defaults
+net.ipv4.tcp_max_tw_buckets=5800000
+net.ipv4.tcp_max_orphans=5800000
+net.ipv4.tcp_max_syn_backlog=100000
+net.ipv4.tcp_keepalive_time=300
+net.ipv4.tcp_tw_recycle=0
+net.ipv4.tcp_tw_reuse=1
+net.core.somaxconn=65534
+net.ipv4.tcp_synack_retries=3
+net.core.netdev_max_backlog=100000
+# This should allow HAProxy maxconn to be 1,000,000
+fs.file-max=2097152
+fs.nr_open=2097152
+
+net.netfilter.nf_conntrack_buckets=125000
+
+net.ipv4.tcp_fin_timeout=5
+net.ipv4.ip_nonlocal_bind=1
+net.ipv6.ip_nonlocal_bind=1
+net.ipv4.tcp_rmem=\"16384 65536 524288\"
+net.ipv4.tcp_wmem=\"16384 349520 699040\"
+net.ipv4.ip_local_port_range=\"1025 65534\"
+" >>${BODI_CHROOT_PATH}/etc/sysctl.conf
+
+#!/bin/bash
+if [[ $HAPROXY_SERVER_ADDR =~ ":" ]]; then
+    /bin/ping6 -q -n -w 1 -c 1 $HAPROXY_SERVER_ADDR > /dev/null 2>&1
+else
+    /bin/ping -q -n -w 1 -c 1 $HAPROXY_SERVER_ADDR > /dev/null 2>&1
+fi
