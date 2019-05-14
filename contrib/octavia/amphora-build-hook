@@ -72,10 +72,3 @@ net.ipv4.tcp_rmem=\"16384 65536 524288\"
 net.ipv4.tcp_wmem=\"16384 349520 699040\"
 net.ipv4.ip_local_port_range=\"1025 65534\"
 " >>${BODI_CHROOT_PATH}/etc/sysctl.conf
-
-#!/bin/bash
-if [[ $HAPROXY_SERVER_ADDR =~ ":" ]]; then
-    /bin/ping6 -q -n -w 1 -c 1 $HAPROXY_SERVER_ADDR > /dev/null 2>&1
-else
-    /bin/ping -q -n -w 1 -c 1 $HAPROXY_SERVER_ADDR > /dev/null 2>&1
-fi
