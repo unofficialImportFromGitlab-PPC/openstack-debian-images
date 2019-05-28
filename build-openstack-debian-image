@@ -1043,7 +1043,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 			echo "iface ${SE_OVSBRIDGE_NAME} inet manual" >> ${ENI}
 			echo "	ovs_type OVSBridge" >> ${ENI}
 			echo "	ovs_ports ${SE_IFACE0}" >> ${ENI}
-			echo "	up ovs-vsctl add-port ${SE_OVSBRIDGE_NAME} ${SE_IFACE0}" >> ${ENI}
+			echo "	up ovs-vsctl add-port ${SE_OVSBRIDGE_NAME} ${SE_IFACE0} || true" >> ${ENI}
 			echo "	up ip link set ${SE_IFACE0} up" >> ${ENI}
 			echo "" >> ${ENI}
 		;;
@@ -1251,7 +1251,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 					echo "iface br-ex inet manual" >> ${ENI}
 					echo "	ovs_type OVSBridge" >> ${ENI}
 					echo "	ovs_ports ${INTERFACE}" >> ${ENI}
-					echo "	up ovs-vsctl add-port br-ex ${INTERFACE}" >> ${ENI}
+					echo "	up ovs-vsctl add-port br-ex ${INTERFACE} || true" >> ${ENI}
 					echo "" >> ${ENI}
 				fi
 			fi
