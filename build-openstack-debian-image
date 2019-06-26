@@ -1220,6 +1220,7 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 				echo "allow-br-ex vlan${SE_VLANNUM}" >> ${ENI}
+				echo "iface vlan${SE_VLANNUM} inet static" >> ${ENI}
 				echo "	ovs_type OVSIntPort" >> ${ENI}
 				echo "	ovs_bridge br-ex" >> ${ENI}
 				echo "	ovs_options tag=${SE_VLANNUM}" >> ${ENI}
