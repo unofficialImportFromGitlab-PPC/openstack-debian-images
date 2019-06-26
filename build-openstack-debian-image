@@ -1220,12 +1220,12 @@ if [ -n "${STATIC_ETH}" ] ; then
 				echo "# Interface vlan${SE_VLANNUM}" >> ${ENI}
 				echo "auto vlan${SE_VLANNUM}" >> ${ENI}
 				echo "allow-br-ex vlan${SE_VLANNUM}" >> ${ENI}
-				echo "	ovs_type OVSIntPort"
-				echo "	ovs_bridge br-ex"
-				echo "	ovs_options tag=${SE_VLANNUM}"
-				echo "	ovs_extra set interface \${IFACE} external-ids:iface-id=\$(hostname -s)-\${IFACE}-vif"
+				echo "	ovs_type OVSIntPort" >> ${ENI}
+				echo "	ovs_bridge br-ex" >> ${ENI}
+				echo "	ovs_options tag=${SE_VLANNUM}" >> ${ENI}
+				echo "	ovs_extra set interface \${IFACE} external-ids:iface-id=\$(hostname -s)-\${IFACE}-vif" >> ${ENI}
 				if [ -n "${SE_MTU}" ] ; then
-					echo "	ovs_mtu ${SE_MTU}"
+					echo "	ovs_mtu ${SE_MTU}" >> ${ENI}
 				fi
 				echo "	address ${IFACE_ADDR}" >> ${ENI}
 				echo "	network ${IFACE_NETWORK}" >> ${ENI}
