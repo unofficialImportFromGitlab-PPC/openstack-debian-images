@@ -1241,13 +1241,14 @@ if [ -n "${STATIC_ETH}" ] ; then
 				if [ -n "${SE_VMNET_ADDR}" ] ; then
 					echo "# Interface vlan${SE_VMNET_VLAN}" >> ${ENI}
 					echo "auto vlan${SE_VMNET_VLAN}" >> ${ENI}
+					echo "allow-br-ex vlan${SE_VMNET_VLAN}" >> ${ENI}
 					echo "iface vlan${SE_VMNET_VLAN} inet static" >> ${ENI}
 					echo "	ovs_type OVSIntPort" >> ${ENI}
 					echo "	ovs_bridge br-ex" >> ${ENI}
 					echo "	ovs_options tag=${SE_VMNET_VLAN}" >> ${ENI}
 					echo "	vs_extra set interface \${IFACE} external-ids:iface-id=\$(hostname -s)-\${IFACE}-vif" >> ${ENI}
 					if [ -n "${SE_MTU}" ] ; then
-						echo "ovs_mtu ${SE_MTU}" >> ${ENI}
+						echo "	ovs_mtu ${SE_MTU}" >> ${ENI}
 					fi
 					echo "	address ${VMNET_IFACE_ADDR}" >> ${ENI}
 					echo "	network ${VMNET_IFACE_NETWORK}" >> ${ENI}
