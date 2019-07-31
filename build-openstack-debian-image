@@ -959,6 +959,8 @@ if [ "${REAL_HARDWARE}" = "yes" ] ; then
 	for i in $(ip link show | grep -v '^ ' | grep -v 'lo:' | cut -d' ' -f2 | cut -d: -f1) ; do
 	        MAC_ADDR=$(ip link show dev $i | grep 'link/ether' | awk '{print $2}')
 	        ETH_SPEED=$(( $(lshw -class network 2>/dev/null -json | jq '.[] | select(.serial|test("'${MAC_ADDR}'")) | .capacity') / 1000000))
+	        if [ "${ETH_SPEED}" = 25000 ] ; then
+			NICE_SPEED="25 Gbits/s"
 	        if [ "${ETH_SPEED}" = 10000 ] ; then
 			NICE_SPEED="10 Gbits/s"
 	        elif [ "${ETH_SPEED}" = 1000 ] ; then
