@@ -1,5 +1,6 @@
 openstack-debian-images (1.37) UNRELEASED; urgency=medium
 
+  [ Thomas Goirand ]
   * Add vmnet option for non-bridge, non-vlan (ie: normal eth0) setup.
   * Add type=ovsbridge.
   * Remove euca2ools and aptitude from default.
@@ -16,6 +17,9 @@ openstack-debian-images (1.37) UNRELEASED; urgency=medium
     fails because the port is already added in OVS.
   * Add an option to use only OVS interfaces.
   * Add an option for --tty-autologin.
+
+  [ Ondřej Nový ]
+  * Use debhelper-compat instead of debian/compat.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 05 Mar 2019 11:51:53 +0100
 
