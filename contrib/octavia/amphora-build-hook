@@ -34,8 +34,8 @@ if [[ \$HAPROXY_SERVER_ADDR =~ \":\" ]]; then
 else
     /bin/ping -q -n -w 1 -c 1 \$HAPROXY_SERVER_ADDR > /dev/null 2>&1
 fi
-" >/var/lib/octavia/ping-wrapper.sh
-chmod +x /var/lib/octavia/ping-wrapper.sh
+" >${BODI_CHROOT_PATH}/var/lib/octavia/ping-wrapper.sh
+chmod +x ${BODI_CHROOT_PATH}/var/lib/octavia/ping-wrapper.sh
 
 # Set the amphora-netns.service
 mkdir -p ${BODI_CHROOT_PATH}/usr/lib/systemd/system
