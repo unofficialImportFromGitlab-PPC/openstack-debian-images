@@ -11,7 +11,6 @@ build-openstack-debian-image --release ${RELEASE} --hook-script ${HOOK_PATH} \
 	-s http://mirror.infomaniak.ch/debian \
 	-e cryptsetup,acl,acpid,apparmor,apt-transport-https,at,bash-completion,cloud-guest-utils,cron,curl,dbus,dkms,dmeventd,ifenslave,ifupdown,iptables,iputils-tracepath,irqbalance,less,lsof,net-tools,netbase,netcat-openbsd,open-vm-tools,pollinate,psmisc,rsyslog,socat,tcpdump,uuid-runtime,vim-tiny,vlan,debconf,dbconfig-common \
 	--postinstall-packages joe,gpg,gpg-agent,dirmngr,keepalived,ipvsadm,iputils-ping,haproxy,dkms,ethtool,gawk \
-	--password tupeuxpastest \
 	--permit-ssh-as-root \
 	--output debian-${RELEASE}-octavia-amphora-$(TZ=UTC date '+%Y.%m.%d-%H.%M')-amd64 \
 	--security-mirror http://10.4.22.95:9999/security
