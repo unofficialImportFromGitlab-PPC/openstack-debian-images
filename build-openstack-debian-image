@@ -19,7 +19,7 @@ export LC_ALL
 usage() {
 	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye|booksworm|sid> [options]
 Options are:
- --ports
+ --nocleanup|-nc
  --keyring|-k
  --no-resolve-deps|-nd
  --minimal|-m
@@ -70,7 +70,11 @@ Options are:
 For more info: man $0"
 	exit 1
 }
-
+ALLOW_UNAUTH="" #--allow-unauthenticated"
+NO_CLEANUP=""
+KEYRING=""
+NO_RESOLVE_DEPS=""
+PGP_KEY_URL=""
 EXTRA=yes
 AZURE=no
 BOOTMANAGER=grub
@@ -126,8 +130,8 @@ for i in $@ ; do
 		EXTRA=no
 		shift
 	;;
-	"--ports")
-                PORTS=yes
+	"--nocleanup"|"-nc")
+                NO_CLEANUP=yes
                 shift
         ;;
 
@@ -159,6 +163,11 @@ for i in $@ ; do
 			usage
 		fi
 		ARCH=${2}
+		if [ "${2}" = "ppc64" ] ; then
+			KARCH="powerpc64"
+		else
+			KARCH=${ARCH}
+		fi
 		shift
 		shift
 	;;
@@ -515,6 +524,7 @@ NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${
 
 if [ "${ARCH}" = "ppc64" ] ; then
 	EXCLUDE_PACKAGES="--exclude=powerpc-ibm-utils,powerpc-utils "
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},debian-ports-archive-keyring
 else
 	EXCLUDE_PACKAGES=""
 fi
@@ -632,7 +642,11 @@ cleanup(){
 	fi
 	exit $error
 }
-trap "cleanup" EXIT TERM INT
+if [ -z "${NO_CLEANUP}" ] ; then
+	trap "cleanup" EXIT TERM INT
+else
+	echo "no clean up applied "
+fi
 
 if [ -n "${RAID_DEVICES}" ] ; then
 	# Transform the list "sda sdb" to "/dev/sda1 /dev/sdb1"
@@ -1651,7 +1665,7 @@ fi
 if [ -n "${PGP_KEY_URL}" ] ; then
 	chroot ${MOUNT_DIR} wget -O - ${PGP_KEY_URL}|apt-key add
 fi
-chroot ${MOUNT_DIR} apt-get update
+chroot ${MOUNT_DIR} apt-get update ${ALLOW_UNAUTH}
 if [ "${AZURE}" = "yes" ] ; then
 	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
@@ -1672,10 +1686,10 @@ if [ "${RELEASE_NUM}" -ge 10 ] && [ "${ARCH}" = "amd64" ] ; then
 	if [ "${REAL_HARDWARE}" = "no" ] && [ "${CLOUD_KERNEL}" = "yes" ] ; then
 		KERNEL_PACKAGE_NAME=linux-image-cloud-${ARCH}
 	else
-		KERNEL_PACKAGE_NAME=linux-image-${ARCH}
+		KERNEL_PACKAGE_NAME=linux-image-${KARCH}
 	fi
 else
-	KERNEL_PACKAGE_NAME=linux-image-${ARCH}
+	KERNEL_PACKAGE_NAME=linux-image-${KARCH}
 fi
 chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" ${KERNEL_PACKAGE_NAME}
 
