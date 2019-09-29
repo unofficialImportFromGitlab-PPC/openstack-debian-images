@@ -19,6 +19,9 @@ export LC_ALL
 usage() {
 	echo "Usage: $0 --release|-r <jessie|wheezy|stretch|buster|bullseye|booksworm|sid> [options]
 Options are:
+ --ports
+ --keyring|-k
+ --no-resolve-deps|-nd
  --minimal|-m
  --azure|-az
  --boot-manager|-bm <grub|syslinux> (default: grub)
@@ -87,6 +90,20 @@ CLOUD_KERNEL=yes
 TTY_AUTOLOGIN=no
 for i in $@ ; do
 	case "${1}" in
+	"--keyring"|"-k")
+       		if [ -z "${2}" ] ; then
+                        echo "No parameter defining the keyring"
+                        usage
+                fi
+		PGP_KEY_URL=""
+                KEYRING="--keyring=${2}"
+                shift
+                shift
+        ;;
+	"--no-resolve-deps"|"-nd")
+                NO_RESOLVE_DEPS="--no-resolve-deps"
+                shift
+        ;;
 	"--extra-packages"|"-e")
 		if [ -z "${2}" ] ; then
 			echo "No parameter defining the extra packages"
@@ -109,6 +126,11 @@ for i in $@ ; do
 		EXTRA=no
 		shift
 	;;
+	"--ports")
+                PORTS=yes
+                shift
+        ;;
+
 	"--azure"|"-az")
 		AZURE=yes
 		shift
@@ -132,7 +154,7 @@ for i in $@ ; do
 		shift
 	;;
 	"--architecture"|"-a")
-		if [ "${2}" != "amd64" ] && [ "${2}" != "arm64" ] ; then
+		if [ "${2}" != "amd64" ] && [ "${2}" != "arm64"] && [ "${2}" != "ppc64" ] ; then
 			echo "No recognized parameter defining the architecture (currently support amd64 and arm64)"
 			usage
 		fi
@@ -361,7 +383,6 @@ for i in $@ ; do
 	;;
 	esac
 done
-
 if [ -z "${RELEASE}" ] ; then
 	echo "Release not recognized: please specify the -r parameter."
 	usage
@@ -442,7 +463,7 @@ if [ "${BOOTMANAGER}" = "grub" ] ; then
 			GRUB_TARGET="x86_64-efi"
 		fi
 	else
-		BOOT_MGR_PKG="grub-pc"
+		BOOT_MGR_PKG="grub2-common" #"grub-pc"
 		GRUB_TARGET="i386-pc"
 	fi
 else
@@ -491,6 +512,13 @@ if echo "${STATIC_ETH}" | grep -q vlan ; then
 fi
 
 NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${BOOT_MGR_PKG},openssh-server,file,kbd,file${IF_PKG}${RAID_PKG}
+
+if [ "${ARCH}" = "ppc64" ] ; then
+	EXCLUDE_PACKAGES="--exclude=powerpc-ibm-utils,powerpc-utils "
+else
+	EXCLUDE_PACKAGES=""
+fi
+
 if [ "${RELEASE}" = "wheezy" ] ; then
 	# These are needed by cloud-init and friends, and since we don't want backports of them,
 	# but just normal packages from Wheezy, we resolve dependencies by hand, prior to using
@@ -582,6 +610,7 @@ cleanup(){
 	if [ "$error" -gt 0 ]; then
 		echo
 		echo "Error $error"
+		cp ${MOUNT_DIR}/debootstrap/debootstrap.log /tmp/debootstrap.log 
 	else
 		echo "Finished."
 	fi
@@ -689,9 +718,9 @@ if [ "${BOOTTYPE}" = "uefi" ] ; then
 fi
 
 debootstrap --verbose \
-	--include=${PKG_LIST} \
+	--arch=${ARCH} ${KEYRING} ${NO_RESOLVE_DEPS} \
+	--include=${PKG_LIST} ${EXCLUDE_PACKAGES} \
 	${RELEASE} ${MOUNT_DIR} ${DEB_MIRROR}
-
 
 if [ -n "${XFSFORMAT}" ] ; then
 	XFS_HDDS=$(echo ${XFSFORMAT} | tr , " ")
@@ -1619,7 +1648,9 @@ FY6A20E=
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 fi
-
+if [ -n "${PGP_KEY_URL}" ] ; then
+	chroot ${MOUNT_DIR} wget -O - ${PGP_KEY_URL}|apt-key add
+fi
 chroot ${MOUNT_DIR} apt-get update
 if [ "${AZURE}" = "yes" ] ; then
 	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" debian-azure-archive-keyring unscd
