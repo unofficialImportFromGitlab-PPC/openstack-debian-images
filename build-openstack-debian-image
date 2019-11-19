@@ -472,8 +472,13 @@ if [ "${BOOTMANAGER}" = "grub" ] ; then
 			GRUB_TARGET="x86_64-efi"
 		fi
 	else
-		BOOT_MGR_PKG="grub2-common" #"grub-pc"
-		GRUB_TARGET="i386-pc"
+		if [ "${ARCH}" = "ppc64" ] ; then
+			GRUB_TARGET="powerpc-ieee1275"
+			BOOT_MGR_PKG="grub2-common"
+		else
+			BOOT_MGR_PKG="grub-pc"
+			GRUB_TARGET="i386-pc"
+		fi
 	fi
 else
 	BOOT_MGR_PKG="extlinux"
@@ -524,7 +529,7 @@ NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${
 
 if [ "${ARCH}" = "ppc64" ] ; then
 	EXCLUDE_PACKAGES="--exclude=powerpc-ibm-utils,powerpc-utils "
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},debian-ports-archive-keyring
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},debian-ports-archive-keyring,grub-ieee1275-bin,grub-ieee1275
 else
 	EXCLUDE_PACKAGES=""
 fi
@@ -1665,7 +1670,9 @@ fi
 if [ -n "${PGP_KEY_URL}" ] ; then
 	chroot ${MOUNT_DIR} wget -O - ${PGP_KEY_URL}|apt-key add
 fi
-chroot ${MOUNT_DIR} apt-get update ${ALLOW_UNAUTH}
+cp ./grub ${MOUNT_DIR}/etc/default/grub
+
+chroot ${MOUNT_DIR} apt-get update
 if [ "${AZURE}" = "yes" ] ; then
 	chroot ${MOUNT_DIR} apt-get install -y -o Dpkg::Options::="--force-confnew" debian-azure-archive-keyring unscd
 	chroot ${MOUNT_DIR} apt-get update
@@ -1801,7 +1808,8 @@ GRUB_SERIAL_COMMAND=\"serial --unit=1 --speed=115200 --word=8 --parity=no --stop
 	mount --bind /dev ${MOUNT_DIR}/dev
 	mount --bind /proc ${MOUNT_DIR}/proc
 	mount --bind /sys ${MOUNT_DIR}/sys
-	echo "grub-efi-${ARCH} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
+	
+	echo "${BOOT_MGR_PKG} grub2/force_efi_extra_removable boolean true" | chroot ${MOUNT_DIR} debconf-set-selections
 	chroot ${MOUNT_DIR} grub-mkconfig -o /boot/grub/grub.cfg
 	# Run grub from the chroot, pointing to the bind mounted /dev device.
 	if [ -n "${RAID_DEVICES}" ] ; then
