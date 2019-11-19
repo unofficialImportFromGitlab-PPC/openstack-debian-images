@@ -529,7 +529,7 @@ NEEDED_PACKAGES=sudo,adduser,lsb-release,busybox-static,console-setup,locales,${
 
 if [ "${ARCH}" = "ppc64" ] ; then
 	EXCLUDE_PACKAGES="--exclude=powerpc-ibm-utils,powerpc-utils "
-	NEEDED_PACKAGES=${NEEDED_PACKAGES},debian-ports-archive-keyring,grub-ieee1275-bin,grub-ieee1275
+	NEEDED_PACKAGES=${NEEDED_PACKAGES},debian-ports-archive-keyring
 else
 	EXCLUDE_PACKAGES=""
 fi
