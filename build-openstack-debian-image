@@ -1825,7 +1825,7 @@ GRUB_SERIAL_COMMAND=\"serial --unit=1 --speed=115200 --word=8 --parity=no --stop
 			GRUB_DESTINATION_DEV=/dev/${DEST_HDD}
 		fi
 		if [ "${ARCH}" = "ppc64" ] ; then
-			chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --force /dev/loop0p1
+			chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --force /dev/loop0
 		else
 			chroot ${MOUNT_DIR} grub-install --target=${GRUB_TARGET} --no-nvram --force-extra-removable --no-floppy --modules="part_msdos part_gpt" --grub-mkdevicemap=/boot/grub/device.map ${GRUB_DESTINATION_DEV}
 		fi
